@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Skenario Testing Manual - ERP System</title>
+    <script src="/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            font-size: 18px;
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #3730a3;
+        }
+
+        .status {
+            margin-top: 16px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📋 Generate Skenario Testing Manual</h1>
+    <p>Klik tombol di bawah untuk generate file PDF skenario testing lengkap.</p>
+    <button class="btn" onclick="generatePDF()">📄 Generate PDF</button>
+    <div class="status" id="status"></div>
+
+    <script>
+        function generatePDF() {
+            document.getElementById('status').textContent = 'Generating PDF...';
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const pw = doc.internal.pageSize.getWidth();
+            const ph = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const contentW = pw - margin * 2;
+            let y = 0;
+            let pageNum = 1;
+            const primary = [79, 70, 229];
+            const dark = [33, 33, 33];
+            const gray = [100, 100, 100];
+            const lightBg = [248, 249, 250];
+
+            function checkPage(needed) {
+                if (y + needed > ph - 20) {
+                    // footer
+                    doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+                    doc.text('Skenario Testing Manual - ERP System', margin, ph - 8);
+                    doc.text('Halaman ' + pageNum, pw - margin, ph - 8, { align: 'right' });
+                    doc.addPage(); pageNum++; y = 20;
+                }
+            }
+
+            function title(text) {
+                checkPage(20);
+                doc.setFontSize(18); doc.setTextColor(...primary); doc.setFont(undefined, 'bold');
+                doc.text(text, margin, y); y += 8;
+                doc.setDrawColor(...primary); doc.setLineWidth(0.8); doc.line(margin, y, pw - margin, y); y += 8;
+            }
+
+            function subtitle(text) {
+                checkPage(14);
+                doc.setFontSize(13); doc.setTextColor(...dark); doc.setFont(undefined, 'bold');
+                doc.text(text, margin, y); y += 7;
+            }
+
+            function text(t, indent) {
+                checkPage(7);
+                const x = margin + (indent || 0);
+                doc.setFontSize(9); doc.setTextColor(...dark); doc.setFont(undefined, 'normal');
+                const lines = doc.splitTextToSize(t, contentW - (indent || 0));
+                lines.forEach(line => { checkPage(5); doc.text(line, x, y); y += 4.5; });
+            }
+
+            function step(num, desc, expected) {
+                checkPage(16);
+                doc.setFontSize(9); doc.setFont(undefined, 'bold'); doc.setTextColor(...primary);
+                doc.text('Step ' + num + ':', margin + 4, y);
+                doc.setFont(undefined, 'normal'); doc.setTextColor(...dark);
+                const descLines = doc.splitTextToSize(desc, contentW - 24);
+                doc.text(descLines, margin + 22, y); y += descLines.length * 4.5;
+                if (expected) {
+                    doc.setFont(undefined, 'italic'); doc.setTextColor(...gray);
+                    const expLines = doc.splitTextToSize('Expected: ' + expected, contentW - 10);
+                    expLines.forEach(line => { checkPage(5); doc.text(line, margin + 10, y); y += 4.5; });
+                }
+                y += 2;
+            }
+
+            function checkbox(t) {
+                checkPage(7);
+                doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.3);
+                doc.rect(margin + 4, y - 3, 3.5, 3.5);
+                doc.setFontSize(9); doc.setTextColor(...dark); doc.setFont(undefined, 'normal');
+                const lines = doc.splitTextToSize(t, contentW - 14);
+                doc.text(lines, margin + 10, y); y += lines.length * 4.5 + 1;
+            }
+
+            function sectionGap() { y += 6; }
+
+            function tableRow(cols, isHeader) {
+                checkPage(8);
+                const colWidths = [12, 50, 50, contentW - 112];
+                let x = margin;
+                if (isHeader) {
+                    doc.setFillColor(...primary); doc.rect(margin, y - 4, contentW, 7, 'F');
+                    doc.setTextColor(255, 255, 255); doc.setFont(undefined, 'bold');
+                } else {
+                    doc.setTextColor(...dark); doc.setFont(undefined, 'normal');
+                    doc.setDrawColor(220, 220, 220); doc.line(margin, y + 2.5, pw - margin, y + 2.5);
+                }
+                doc.setFontSize(8);
+                cols.forEach((col, i) => {
+                    doc.text(String(col), x + 1, y, { maxWidth: colWidths[i] - 2 });
+                    x += colWidths[i];
+                });
+                y += isHeader ? 5 : 5.5;
+            }
+
+            // ===================== PAGE 1: COVER =====================
+            y = 60;
+            doc.setFontSize(32); doc.setTextColor(...primary); doc.setFont(undefined, 'bold');
+            doc.text('SKENARIO TESTING', pw / 2, y, { align: 'center' }); y += 12;
+            doc.text('MANUAL', pw / 2, y, { align: 'center' }); y += 16;
+            doc.setFontSize(16); doc.setTextColor(...dark); doc.setFont(undefined, 'normal');
+            doc.text('ERP System - ERPsys', pw / 2, y, { align: 'center' }); y += 10;
+            doc.setFontSize(11); doc.setTextColor(...gray);
+            doc.text('Versi 1.0 | 27 Februari 2026', pw / 2, y, { align: 'center' }); y += 30;
+
+            doc.setDrawColor(...primary); doc.setLineWidth(1); doc.line(60, y, pw - 60, y); y += 15;
+
+            doc.setFontSize(10); doc.setTextColor(...dark); doc.setFont(undefined, 'bold');
+            doc.text('Daftar Isi:', margin + 10, y); y += 7;
+            doc.setFont(undefined, 'normal'); doc.setFontSize(9);
+            const toc = [
+                '1. Login & Autentikasi', '2. Dashboard & Navigasi', '3. Penjualan (SO, Invoice, Retur)',
+                '4. POS (Point of Sale)', '5. Pembelian (PO, Tagihan, Retur)',
+                '6. Inventori (Barang, Kategori, Gudang)', '7. Akuntansi (Jurnal, CoA, Laporan)',
+                '8. Settings (User, Roles, Audit Trail)', '9. RBAC & Multi-Branch', '10. Data Akun Testing'
+            ];
+            toc.forEach(item => { doc.text(item, margin + 14, y); y += 5.5; });
+
+            doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+            doc.text('Skenario Testing Manual - ERP System', margin, ph - 8);
+            doc.text('Halaman ' + pageNum, pw - margin, ph - 8, { align: 'right' });
+
+            // ===================== SECTION 1: LOGIN =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('1. Login & Autentikasi');
+            subtitle('1.1 Login Berhasil');
+            step(1, 'Buka aplikasi di browser (http://localhost:5173)', 'Halaman login muncul dengan form username & password');
+            step(2, 'Masukkan username: admin, password: admin123', 'Field terisi');
+            step(3, 'Klik tombol Login', 'Redirect ke Dashboard, nama user terlihat di header');
+            step(4, 'Cek sidebar menu', 'Semua menu tersedia untuk role Super Admin');
+            sectionGap();
+
+            subtitle('1.2 Login Gagal');
+            step(1, 'Masukkan username: admin, password: salah123', 'Muncul pesan error "Username atau password salah"');
+            step(2, 'Kosongkan username, klik Login', 'Validasi form: field required');
+            sectionGap();
+
+            subtitle('1.3 Logout');
+            step(1, 'Klik nama user di pojok kanan atas', 'Dropdown menu muncul');
+            step(2, 'Klik "Keluar"', 'Redirect ke halaman login, session terhapus');
+            sectionGap();
+
+            // ===================== SECTION 2: DASHBOARD =====================
+            title('2. Dashboard & Navigasi');
+            subtitle('2.1 Dashboard Overview');
+            step(1, 'Login sebagai admin, pastikan di Dashboard', 'Terlihat 4 stat card: Penjualan, Piutang, Hutang, Stok Menipis');
+            step(2, 'Cek chart Tren Penjualan', 'Bar chart 7 hari terakhir muncul dengan data');
+            step(3, 'Cek Pending Approvals', 'List SO/PO yang pending muncul');
+            step(4, 'Cek Quick Actions', 'Tombol aksi cepat sesuai permission role');
+            sectionGap();
+
+            subtitle('2.2 Dashboard Flexible Layout (Multi-Role)');
+            step(1, 'Logout, login sebagai kasir (kasir/kasir123)', 'Dashboard tampil tanpa kolom kosong');
+            step(2, 'Cek card yang muncul', 'Hanya card yang sesuai permission, tidak ada gap/kosong');
+            step(3, 'Logout, login sebagai gudang (gudang/gudang123)', 'Card inventory muncul, card sales/finance tidak ada gap');
+            sectionGap();
+
+            subtitle('2.3 Pindah Cabang');
+            step(1, 'Login sebagai admin', 'Terlihat dropdown cabang di header');
+            step(2, 'Pilih cabang "Surabaya"', 'Dashboard data berubah sesuai cabang Surabaya');
+            step(3, 'Pilih kembali cabang "Jakarta"', 'Data kembali ke Jakarta');
+            sectionGap();
+
+            // ===================== SECTION 3: PENJUALAN =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('3. Modul Penjualan');
+            subtitle('3.1 Sales Order - Buat Baru');
+            step(1, 'Navigasi ke Penjualan > Sales Order', 'Tabel SO muncul dengan data existing');
+            step(2, 'Klik "Buat SO"', 'Modal form muncul');
+            step(3, 'Isi tanggal, pilih pelanggan, pilih gudang', 'Form terisi');
+            step(4, 'Tambah item: pilih barang, qty, harga', 'Baris item muncul, subtotal terhitung');
+            step(5, 'Klik "Simpan"', 'SO baru muncul di tabel, status = draft');
+            step(6, 'Cek Audit Trail', 'Entry "Membuat SO xxx" tercatat');
+            sectionGap();
+
+            subtitle('3.2 Sales Order - Submit & Approve');
+            step(1, 'Klik tombol Submit pada SO draft', 'Status berubah ke "pending"');
+            step(2, 'Klik tombol Approve', 'Status berubah ke "approved"');
+            step(3, 'Cek Audit Trail', 'Entry submit & approve tercatat');
+            sectionGap();
+
+            subtitle('3.3 Sales Order - Reject');
+            step(1, 'Buat SO baru, submit', 'SO status pending');
+            step(2, 'Klik tombol Reject', 'Status berubah ke "rejected"');
+            sectionGap();
+
+            subtitle('3.4 Pelanggan - CRUD');
+            step(1, 'Navigasi ke Penjualan > Pelanggan', 'Tabel pelanggan muncul');
+            step(2, 'Klik "Tambah Pelanggan", isi form, klik Simpan', 'Pelanggan baru muncul di tabel');
+            step(3, 'Klik tombol Edit (pencil icon)', 'Modal form terisi data, ubah dan simpan');
+            step(4, 'Klik tombol Delete (trash icon)', 'Pelanggan terhapus dari tabel');
+            step(5, 'Cek Audit Trail', 'Entry create, edit, delete tercatat');
+            sectionGap();
+
+            subtitle('3.5 Invoice - PDF');
+            step(1, 'Navigasi ke Penjualan > Invoice', 'Tabel invoice muncul');
+            step(2, 'Klik tombol PDF pada invoice', 'File PDF terdownload dengan nama "Invoice xxx.pdf"');
+            step(3, 'Buka file PDF', 'Isi invoice lengkap: header, detail item, total, tanda tangan');
+            sectionGap();
+
+            subtitle('3.6 Retur Penjualan');
+            step(1, 'Navigasi ke Penjualan > Retur Penjualan', 'Tabel retur muncul dengan data');
+            step(2, 'Klik "Buat Retur", pilih SO, centang item, isi alasan', 'Form terisi');
+            step(3, 'Klik Simpan Retur', 'Retur baru muncul, status = draft');
+            step(4, 'Klik tombol Approve (✓)', 'Status berubah ke "Disetujui"');
+            step(5, 'Buat retur lain, klik Tolak (✗), isi alasan', 'Status berubah ke "Ditolak"');
+            step(6, 'Buat retur draft, klik tombol Edit (pencil)', 'Modal terbuka dengan data, bisa diubah');
+            step(7, 'Cek Audit Trail', 'Semua aksi tercatat');
+            sectionGap();
+
+            // ===================== SECTION 4: POS =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('4. POS (Point of Sale)');
+            step(1, 'Navigasi ke Penjualan > POS', 'Tampilan POS fullscreen muncul');
+            step(2, 'Cari barang di search bar', 'Produk terfilter sesuai pencarian');
+            step(3, 'Klik produk untuk menambahkan ke keranjang', 'Item muncul di sidebar keranjang, qty = 1');
+            step(4, 'Ubah qty di keranjang', 'Subtotal berubah otomatis');
+            step(5, 'Klik "Bayar"', 'Modal pembayaran muncul');
+            step(6, 'Isi nominal bayar, klik "Proses Pembayaran"', 'Transaksi selesai, kembalian ditampilkan');
+            step(7, 'Cek Audit Trail', 'Transaksi POS tercatat');
+            sectionGap();
+
+            // ===================== SECTION 5: PEMBELIAN =====================
+            title('5. Modul Pembelian');
+            subtitle('5.1 Purchase Order');
+            step(1, 'Navigasi ke Pembelian > Purchase Order', 'Tabel PO muncul');
+            step(2, 'Klik "Buat PO", isi form (supplier, gudang, item)', 'PO baru tersimpan, status = draft');
+            step(3, 'Submit → Approve/Reject PO', 'Status berubah sesuai aksi');
+            step(4, 'Cek Audit Trail', 'Entry create, submit, approve/reject tercatat');
+            sectionGap();
+
+            subtitle('5.2 Supplier - CRUD');
+            step(1, 'Navigasi ke Pembelian > Supplier', 'Tabel supplier muncul');
+            step(2, 'Tambah, Edit, Delete supplier', 'CRUD berfungsi, audit tercatat');
+            sectionGap();
+
+            subtitle('5.3 Tagihan Pembelian');
+            step(1, 'Navigasi ke Pembelian > Tagihan', 'Tabel tagihan muncul dengan data');
+            step(2, 'Klik tombol Bayar (💰)', 'Status berubah ke "Lunas"');
+            step(3, 'Klik tombol PDF', 'File PDF terdownload');
+            step(4, 'Cek Audit Trail', 'Pembayaran tercatat');
+            sectionGap();
+
+            subtitle('5.4 Retur Pembelian');
+            step(1, 'Navigasi ke Pembelian > Retur Pembelian', 'Tabel retur muncul');
+            step(2, 'Klik "Buat Retur", pilih PO, centang item, alasan', 'Retur tersimpan draft');
+            step(3, 'Approve / Tolak / Edit retur', 'Aksi berfungsi, audit tercatat');
+            sectionGap();
+
+            // ===================== SECTION 6: INVENTORI =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('6. Modul Inventori');
+            subtitle('6.1 Master Barang');
+            step(1, 'Navigasi ke Inventori > Barang', 'Tabel barang muncul');
+            step(2, 'Tambah barang baru (kode, nama, harga, kategori)', 'Barang baru muncul di tabel');
+            step(3, 'Edit dan Delete barang', 'Fungsi edit/delete berjalan, audit tercatat');
+            sectionGap();
+
+            subtitle('6.2 Kategori Barang');
+            step(1, 'Navigasi ke Inventori > Kategori', 'Tabel kategori muncul');
+            step(2, 'Tambah, Edit, Delete kategori', 'CRUD berfungsi');
+            step(3, 'Coba hapus kategori yang masih ada barangnya', 'Tombol hapus disabled / gagal hapus');
+            sectionGap();
+
+            subtitle('6.3 Stok per Gudang');
+            step(1, 'Navigasi ke Gudang > Stok', 'Tabel stok per gudang muncul');
+            step(2, 'Cek indikator stok menipis', 'Item dengan stok <= min stock ditandai merah "Menipis"');
+            sectionGap();
+
+            subtitle('6.4 Penerimaan Barang');
+            step(1, 'Navigasi ke Gudang > Penerimaan', 'Tabel penerimaan muncul');
+            step(2, 'Klik "Terima Barang", pilih PO (approved)', 'Item & qty otomatis terisi dari PO');
+            step(3, 'Pilih gudang tujuan, klik Simpan', 'Penerimaan baru tercatat, audit log tercatat');
+            sectionGap();
+
+            subtitle('6.5 Pengeluaran Barang');
+            step(1, 'Navigasi ke Gudang > Pengeluaran', 'Tabel pengeluaran muncul');
+            step(2, 'Klik "Keluarkan Barang", pilih SO (approved)', 'Item & qty otomatis terisi dari SO');
+            step(3, 'Pilih gudang asal, klik Simpan', 'Pengeluaran tercatat, audit log tercatat');
+            sectionGap();
+
+            subtitle('6.6 Transfer Stok');
+            step(1, 'Navigasi ke Gudang > Transfer', 'Tabel transfer muncul');
+            step(2, 'Klik "Buat Transfer", pilih gudang asal & tujuan', 'Dropdown gudang muncul');
+            step(3, 'Tambah item, isi qty, klik Simpan', 'Transfer tercatat, audit log tercatat');
+            step(4, 'Pastikan gudang asal ≠ gudang tujuan', 'Tombol simpan disabled jika sama');
+            sectionGap();
+
+            subtitle('6.7 Stok Opname');
+            step(1, 'Navigasi ke Gudang > Stok Opname', 'Tabel opname muncul');
+            step(2, 'Klik "Buat Opname", pilih gudang', 'Item stok di gudang tersebut otomatis dimuat');
+            step(3, 'Ubah qty aktual beberapa item', 'Kolom selisih otomatis terhitung, ditandai warna');
+            step(4, 'Klik Simpan, lalu Approve opname', 'Status berubah "Disetujui", audit tercatat');
+            step(5, 'Klik Detail (eye icon)', 'Modal detail menampilkan lengkap per item');
+            sectionGap();
+
+            // ===================== SECTION 7: AKUNTANSI =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('7. Modul Akuntansi');
+            subtitle('7.1 Jurnal Umum');
+            step(1, 'Navigasi ke Akuntansi > Jurnal', 'Tabel jurnal muncul');
+            step(2, 'Klik "Buat Jurnal", isi tanggal, deskripsi', 'Form muncul');
+            step(3, 'Tambah baris: pilih akun, debit, kredit', 'Total debit & kredit terhitung');
+            step(4, 'Pastikan debit ≠ kredit', 'Pesan error "Debit dan Kredit harus balance!" muncul');
+            step(5, 'Balance-kan, klik Simpan', 'Jurnal tersimpan, audit tercatat');
+            sectionGap();
+
+            subtitle('7.2 Chart of Accounts');
+            step(1, 'Navigasi ke Akuntansi > CoA', 'Tabel akun muncul');
+            step(2, 'Tambah akun baru (kode, nama, tipe, kategori, mata uang)', 'Akun baru muncul');
+            step(3, 'Edit dan Delete akun', 'CRUD berfungsi, audit tercatat');
+            sectionGap();
+
+            subtitle('7.3 Laporan Keuangan');
+            step(1, 'Navigasi ke Akuntansi > Laporan', 'Halaman laporan keuangan muncul');
+            step(2, 'Klik "Export PDF"', 'File PDF terdownload: "Laporan Keuangan yyyy-mm-dd.pdf"');
+            step(3, 'Buka file PDF', 'Laporan lengkap: Neraca, Laba Rugi, dll');
+            sectionGap();
+
+            // ===================== SECTION 8: SETTINGS =====================
+            title('8. Settings & Audit Trail');
+            subtitle('8.1 Audit Trail');
+            step(1, 'Navigasi ke Settings > Audit Trail', 'Tabel audit log muncul');
+            step(2, 'Cek filter modul: pilih "Penjualan"', 'Hanya log modul penjualan yang tampil');
+            step(3, 'Cek filter aksi: pilih "create"', 'Hanya log create yang tampil');
+            step(4, 'Cek search: ketik nama user', 'Log terfilter berdasarkan nama user');
+            step(5, 'Kombinasi filter + search', 'Hasil sesuai kombinasi filter');
+            step(6, 'Pastikan semua aksi sebelumnya tercatat', 'Lengkap: create, edit, delete, approve, reject, submit');
+            sectionGap();
+
+            // ===================== SECTION 9: RBAC =====================
+            doc.addPage(); pageNum++; y = 20;
+            title('9. RBAC & Multi-Branch Testing');
+            subtitle('9.1 Role-Based Access Control');
+
+            text('Uji akses tiap role berikut:');
+            sectionGap();
+
+            tableRow(['No', 'Role', 'Login', 'Yang Harus Dicek'], true);
+            tableRow(['1', 'Super Admin', 'admin / admin123', 'Semua menu & aksi tersedia']);
+            tableRow(['2', 'Regional Manager', 'regional / regional123', 'Read & approve di 2 cabang, tidak bisa create']);
+            tableRow(['3', 'Manajer Cabang', 'manager_jkt / manager123', 'Full akses tapi hanya cabang Jakarta']);
+            tableRow(['4', 'Manajer Keuangan', 'finance / finance123', 'Akuntansi full, laporan read, approval']);
+            tableRow(['5', 'Staff Sales', 'sales / sales123', 'Penjualan + POS, inventori read-only']);
+            tableRow(['6', 'Staff Purchasing', 'purchasing / purchasing123', 'Pembelian full, inventori read-only']);
+            tableRow(['7', 'Staff Gudang', 'gudang / gudang123', 'Inventori full, PO & SO read-only']);
+            tableRow(['8', 'Kasir', 'kasir / kasir123', 'Hanya POS, redirect ke POS saat login']);
+            sectionGap();
+
+            subtitle('9.2 Checklist per Role');
+            checkbox('Admin: Semua menu visible, semua tombol CRUD aktif');
+            checkbox('Kasir: Hanya POS, redirect otomatis ke POS, menu lain tidak muncul');
+            checkbox('Sales: Menu penjualan ada, menu purchasing tidak ada tombol create');
+            checkbox('Gudang: Menu inventori lengkap, sales order hanya read');
+            checkbox('Finance: Menu akuntansi lengkap, bisa approve');
+            checkbox('Dashboard: Tidak ada kolom kosong untuk role apapun');
+            sectionGap();
+
+            subtitle('9.3 Multi-Branch');
+            step(1, 'Login sebagai admin', 'Dropdown cabang terlihat');
+            step(2, 'Pindah ke cabang Surabaya', 'Data berubah sesuai cabang Surabaya');
+            step(3, 'Buat SO di cabang Surabaya, lalu pindah ke Jakarta', 'SO Surabaya tidak muncul di Jakarta');
+            step(4, 'Login sebagai manager_jkt', 'Hanya bisa akses cabang Jakarta');
+            sectionGap();
+
+            // ===================== SECTION 10: AKUN TESTING =====================
+            title('10. Data Akun Testing');
+            sectionGap();
+
+            tableRow(['No', 'Username', 'Password', 'Role'], true);
+            tableRow(['1', 'admin', 'admin123', 'Super Admin']);
+            tableRow(['2', 'regional', 'regional123', 'Regional Manager']);
+            tableRow(['3', 'manager_jkt', 'manager123', 'Manajer Cabang']);
+            tableRow(['4', 'finance', 'finance123', 'Manajer Keuangan']);
+            tableRow(['5', 'sales', 'sales123', 'Staff Sales']);
+            tableRow(['6', 'purchasing', 'purchasing123', 'Staff Purchasing']);
+            tableRow(['7', 'gudang', 'gudang123', 'Staff Gudang']);
+            tableRow(['8', 'kasir', 'kasir123', 'Kasir']);
+            sectionGap(); sectionGap();
+
+            text('Catatan:');
+            text('• URL: http://localhost:5173', 4);
+            text('• Semua data bersifat mock (simulasi), tidak ada backend database', 4);
+            text('• Data akan reset saat browser di-refresh', 4);
+            text('• Pastikan audit trail dicek setelah setiap aksi penting', 4);
+
+            // last page footer
+            doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+            doc.text('Skenario Testing Manual - ERP System', margin, ph - 8);
+            doc.text('Halaman ' + pageNum, pw - margin, ph - 8, { align: 'right' });
+
+            // Save
+            doc.save('Skenario Testing Manual - ERP System.pdf');
+            document.getElementById('status').textContent = '✅ PDF berhasil di-generate! Cek folder Downloads.';
+        }
+    </script>
+</body>
+
+</html>
