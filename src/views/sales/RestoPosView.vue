@@ -3,7 +3,7 @@
     <!-- ================================================================== -->
     <!-- BUKA KASIR MODAL (blocks POS until session is opened)              -->
     <!-- ================================================================== -->
-    <div v-if="!activeSession && !sessionLoading" class="modal fade show d-block" tabindex="-1"
+    <div v-if="shiftStore.showOpenModal" class="modal fade show d-block" tabindex="-1"
          style="z-index:1070;background:rgba(0,0,0,0.65)">
       <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
         <div class="modal-content shadow-lg">
@@ -61,7 +61,7 @@
     <!-- ================================================================== -->
     <!-- TUTUP KASIR MODAL (closing report preview)                         -->
     <!-- ================================================================== -->
-    <div v-if="showTutupModal" class="modal fade show d-block" tabindex="-1"
+    <div v-if="shiftStore.showCloseModal" class="modal fade show d-block" tabindex="-1"
          style="z-index:1070;background:rgba(0,0,0,0.6)">
       <div class="modal-dialog modal-dialog-centered" style="max-width:480px">
         <div class="modal-content shadow-lg">
@@ -69,7 +69,7 @@
             <h5 class="modal-title mb-0">
               <i class="bi bi-lock me-2"></i>Tutup Kasir
             </h5>
-            <button class="btn-close btn-close-white" @click="showTutupModal = false" :disabled="closingBusy"></button>
+            <button class="btn-close btn-close-white" @click="shiftStore.showCloseModal = false" :disabled="closingBusy"></button>
           </div>
           <div class="modal-body p-0">
             <div v-if="closingLoading" class="text-center py-5">
@@ -167,10 +167,10 @@
                   <span v-if="closingBusy" class="spinner-border spinner-border-sm me-1"></span>
                   <i v-else class="bi bi-lock me-1"></i> {{ closingBusy ? 'Menutup...' : 'Tutup Shift Sekarang' }}
                 </button>
-                <button class="btn btn-outline-secondary w-100" @click="showTutupModal = false" :disabled="closingBusy">Batal</button>
+                <button class="btn btn-outline-secondary w-100" @click="shiftStore.showCloseModal = false" :disabled="closingBusy">Batal</button>
               </template>
               <template v-else>
-                <button class="btn btn-secondary w-100 fw-bold py-2" @click="showTutupModal = false">
+                <button class="btn btn-secondary w-100 fw-bold py-2" @click="shiftStore.showCloseModal = false">
                   <i class="bi bi-check2-circle me-1"></i>Tutup Layer
                 </button>
               </template>
@@ -229,7 +229,7 @@
           <button class="btn btn-sm btn-outline-info py-0 border-0 ms-1 fw-semibold" @click="showAdjustmentModal = true" title="Penyesuaian Kas">
             <i class="bi bi-cash-stack"></i> Kas
           </button>
-          <button class="btn btn-sm btn-outline-danger py-0 border-0 ms-1 fw-semibold" @click="openCloseModal" title="Tutup Kasir">
+          <button class="btn btn-sm btn-outline-danger py-0 border-0 ms-1 fw-semibold" @click="shiftStore.showCloseModal = true" title="Tutup Kasir">
             <i class="bi bi-lock"></i> Tutup
           </button>
         </div>
@@ -632,7 +632,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBranchStore } from '@/stores/branch'
 import { useToast } from '@/composables/useToast'
@@ -643,7 +643,9 @@ import {
   getRestoMenu, createRestoOrder, updateRestoOrderItems,
   updateRestoOrderStatus, checkoutRestoOrder
 } from '@/services/sales/restoApi'
+import { useShiftStore } from '@/stores/shift'
 
+const shiftStore = useShiftStore()
 const router = useRouter()
 const branchStore = useBranchStore()
 const route = useRoute()
@@ -660,13 +662,20 @@ const posSettings = ref({
 })
 
 // Session states
-const activeSession = ref(null)
-const sessionLoading = ref(true)
+const activeSession = computed({
+  get: () => shiftStore.currentShift,
+  set: (val) => { shiftStore.currentShift = val }
+})
+const sessionLoading = computed(() => shiftStore.isLoading)
+
+watch(() => shiftStore.showCloseModal, (newVal) => {
+  if (newVal && activeSession.value) prepareCloseModal()
+})
+
 const openingCashInput = ref(0)
 const openingBusy = ref(false)
 const openingCashRef = ref(null)
 
-const showTutupModal = ref(false)
 const receiptData = ref(null)
 const closingReport = ref(null)
 const closingLoading = ref(false)
@@ -1091,22 +1100,10 @@ function formatSessionTime(ts) {
 }
 
 async function loadCurrentSession() {
-  sessionLoading.value = true
-  try {
-    const raw = localStorage.getItem('resto_shift_data')
-    if (raw) {
-      activeSession.value = JSON.parse(raw)
-    } else {
-      activeSession.value = null
-    }
-  } catch (e) {
-    activeSession.value = null
-  } finally {
-    sessionLoading.value = false
-    if (!activeSession.value) {
-      await nextTick()
-      openingCashRef.value?.focus()
-    }
+  await shiftStore.fetchCurrentShift()
+  if (!activeSession.value) {
+    await nextTick()
+    openingCashRef.value?.focus()
   }
 }
 
@@ -1129,6 +1126,7 @@ async function doBukaKasir() {
     }
     localStorage.setItem('resto_shift_data', JSON.stringify(sessionData))
     activeSession.value = sessionData
+    shiftStore.showOpenModal = false
     openingCashInput.value = 0
     toast.success('Sesi kasir berhasil dibuka (Lokal)!')
   } catch (e) {
@@ -1138,8 +1136,7 @@ async function doBukaKasir() {
   }
 }
 
-async function openCloseModal() {
-  showTutupModal.value = true
+async function prepareCloseModal() {
   closingLoading.value = true
   closingReport.value = null
   actualCashInput.value = ''
@@ -1198,6 +1195,7 @@ async function doTutupKasir() {
     localStorage.removeItem('resto_shift_data')
 
     activeSession.value = null
+    shiftStore.showCloseModal = false
     closingReport.value = {
       ...closingReport.value,
       actual_cash: currentData.actual_cash,

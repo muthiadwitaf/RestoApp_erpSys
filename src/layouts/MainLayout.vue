@@ -99,16 +99,7 @@
           </div>
 
           <!-- User -->
-          <div class="dropdown">
-            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" id="btn-user-menu">
-              <i class="bi bi-person-circle me-1"></i>{{ authStore.user?.name }}
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><span class="dropdown-item-text small text-muted">{{ branchStore.currentBranch?.name }}</span></li>
-              <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#" @click.prevent="handleLogout" id="btn-logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-            </ul>
-          </div>
+          <UserDropdown />
         </div>
       </header>
 
@@ -128,6 +119,7 @@ import { useBranchStore } from '@/stores/branch'
 import { useNotificationStore } from '@/stores/notification'
 import { useThemeStore } from '@/stores/theme'
 import { useCompanyStore } from '@/stores/company'
+import UserDropdown from '@/components/UserDropdown.vue'
 
 const router = useRouter()
 const route  = useRoute()

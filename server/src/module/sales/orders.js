@@ -257,3 +257,94 @@ router.put('/:uuid/reject', requirePermission('sales:approve'), validateUUID(), 
 }));
 
 module.exports = router;
+
+// -------------------------------------------------------------------
+// Order lifecycle management (status flow, payment, cancellation)
+// -------------------------------------------------------------------
+
+// PATCH /:uuid/status – advance order status (DRAFT -> CONFIRMED -> PAID -> COMPLETED)
+router.patch('/:uuid/status', requirePermission('sales:edit'), validateUUID(), asyncHandler(async (req, res) => {
+  const { status } = req.body; // expected new status
+  const allowedStatuses = ['draft', 'confirmed', 'paid', 'completed', 'cancelled', 'refunded'];
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+
+  // Fetch current order
+  const curRes = await query(`SELECT id, status FROM sales_orders WHERE uuid = $1`, [req.params.uuid]);
+  if (curRes.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+  const current = curRes.rows[0];
+
+  // Define allowed transitions
+  const transitions = {
+    draft: ['confirmed', 'cancelled'],
+    confirmed: ['paid', 'cancelled'],
+    paid: ['completed', 'refunded'],
+    completed: [],
+    cancelled: [],
+    refunded: []
+  };
+
+  if (!transitions[current.status].includes(status)) {
+    return res.status(400).json({ error: `Cannot transition from ${current.status} to ${status}` });
+  }
+
+  // Update status and timestamps
+  const updateRes = await query(
+    `UPDATE sales_orders SET status = $1, updated_at = NOW() WHERE uuid = $2 RETURNING *`,
+    [status, req.params.uuid]
+  );
+  res.json(updateRes.rows[0]);
+}));
+
+// POST /:uuid/pay – record payment (supports equal split array)
+router.post('/:uuid/pay', requirePermission('sales:edit'), validateUUID(), asyncHandler(async (req, res) => {
+  const { payments } = req.body; // [{ amount, method, split_by }]
+  if (!Array.isArray(payments) || payments.length === 0) {
+    return res.status(400).json({ error: 'Payments array required' });
+  }
+
+  // Verify order exists and is in CONFIRMED state (cannot pay before confirmed)
+  const orderRes = await query(`SELECT id, status, total FROM sales_orders WHERE uuid = $1`, [req.params.uuid]);
+  if (orderRes.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+  const order = orderRes.rows[0];
+  if (order.status !== 'confirmed') {
+    return res.status(400).json({ error: 'Order must be CONFIRMED before payment' });
+  }
+
+  // Insert payments
+  const paymentPromises = payments.map(p => {
+    const { amount, method } = p;
+    return query(
+      `INSERT INTO sales_order_payments (order_id, amount, method) VALUES ($1,$2,$3) RETURNING *`,
+      [order.id, amount, method || 'cash']
+    );
+  });
+  await Promise.all(paymentPromises);
+
+  // Update order status to PAID if total paid >= order total
+  const paidRes = await query(
+    `SELECT SUM(amount) as paid FROM sales_order_payments WHERE order_id = $1`,
+    [order.id]
+  );
+  const totalPaid = parseFloat(paidRes.rows[0].paid || 0);
+  const newStatus = totalPaid >= parseFloat(order.total) ? 'paid' : order.status;
+  if (newStatus !== order.status) {
+    await query(`UPDATE sales_orders SET status = $1, updated_at = NOW() WHERE id = $2`, [newStatus, order.id]);
+  }
+  res.json({ message: 'Payments recorded', totalPaid, newStatus });
+}));
+
+// POST /:uuid/cancel – cancel order (only before PAID)
+router.post('/:uuid/cancel', requirePermission('sales:edit'), validateUUID(), asyncHandler(async (req, res) => {
+  const orderRes = await query(`SELECT id, status FROM sales_orders WHERE uuid = $1`, [req.params.uuid]);
+  if (orderRes.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+  const order = orderRes.rows[0];
+  if (order.status === 'paid' || order.status === 'completed') {
+    return res.status(400).json({ error: 'Cannot cancel after payment' });
+  }
+  // Set status to cancelled
+  await query(`UPDATE sales_orders SET status = 'cancelled', updated_at = NOW() WHERE id = $1`, [order.id]);
+  // TODO: restore inventory (call inventory service) – placeholder for now
+  res.json({ message: 'Order cancelled' });
+}));
