@@ -1,0 +1,204 @@
+/* ============================================
+   HR Module — Coming Soon Shared Styles
+   ============================================ */
+
+.hr-coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height) - 3rem);
+  padding: 2rem 1rem;
+}
+
+.cs-card {
+  background: #fff;
+  border-radius: 1.25rem;
+  box-shadow: 0 0.5rem 2.5rem rgba(67, 97, 238, 0.12);
+  padding: 3rem 2.5rem;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: cs-fadein 0.5s ease;
+}
+
+.cs-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+}
+
+/* Icon wrap */
+.cs-icon-wrap {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(67, 97, 238, 0.12), rgba(114, 9, 183, 0.12));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  animation: cs-pulse 3s infinite ease-in-out;
+}
+
+.cs-icon {
+  font-size: 2.5rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Badge */
+.cs-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 0.25rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+/* Title */
+.cs-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2d3436;
+  margin-bottom: 0.75rem;
+}
+
+/* Subtitle */
+.cs-subtitle {
+  font-size: 0.925rem;
+  color: #636e72;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+/* Divider */
+.cs-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e3e6f0, transparent);
+  margin-bottom: 1.5rem;
+}
+
+/* Status row */
+.cs-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: rgba(67, 97, 238, 0.08);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.cs-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  animation: cs-blink 1.4s infinite ease-in-out;
+}
+
+/* Note */
+.cs-note {
+  font-size: 0.82rem;
+  color: #b2bec3;
+  margin-bottom: 1.75rem;
+}
+
+/* Features list */
+.cs-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.cs-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #636e72;
+  padding: 0.5rem 0.75rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+}
+
+.cs-feature-item i {
+  color: var(--success-color);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Animations */
+@keyframes cs-fadein {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cs-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.15); }
+  50%       { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(67, 97, 238, 0); }
+}
+
+@keyframes cs-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Dark mode */
+[data-theme="dark"] .cs-card {
+  background: #2c3036;
+  box-shadow: 0 0.5rem 2.5rem rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .cs-title {
+  color: #f0f0f0;
+}
+
+[data-theme="dark"] .cs-subtitle {
+  color: #b2bec3;
+}
+
+[data-theme="dark"] .cs-note {
+  color: #636e72;
+}
+
+[data-theme="dark"] .cs-feature-item {
+  background: #3a3f47;
+  color: #adb5bd;
+}
+
+[data-theme="dark"] .cs-divider {
+  background: linear-gradient(90deg, transparent, #444, transparent);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .cs-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .cs-features {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-title {
+    font-size: 1.4rem;
+  }
+}

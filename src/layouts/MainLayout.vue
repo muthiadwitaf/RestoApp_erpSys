@@ -1,0 +1,220 @@
+<template>
+  <div class="d-flex">
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" :class="{ active: mobileOpen }" @click="closeMobileSidebar"></div>
+    <!-- Sidebar -->
+    <nav class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }" id="sidebar">
+      <!-- Brand: local resto name -->
+      <a href="/" class="sidebar-brand">
+        <i class="bi bi-display"></i>
+        <span class="ms-2">
+          <span class="d-block text-truncate" style="font-size:0.9rem;font-weight:700;color:#fff;max-width:140px">{{ localRestoName }}</span>
+        </span>
+      </a>
+      <ul class="sidebar-nav pos-sidebar-nav mt-3">
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/pos" class="nav-link" active-class="active">
+            <i class="bi bi-display"></i><span class="nav-text">Kasir POS</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/tables" class="nav-link" active-class="active">
+            <i class="bi bi-grid-3x3-gap-fill"></i><span class="nav-text">Denah Meja</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/menu" class="nav-link" active-class="active">
+            <i class="bi bi-journal-richtext"></i><span class="nav-text">Katalog Menu</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/kitchen" class="nav-link" active-class="active">
+            <i class="bi bi-fire"></i><span class="nav-text">Kitchen Display</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/history" class="nav-link" active-class="active">
+            <i class="bi bi-clock-history"></i><span class="nav-text">Riwayat Transaksi Resto</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'reportingsales:view'">
+          <router-link to="/resto/reports" class="nav-link" active-class="active">
+            <i class="bi bi-bar-chart-line"></i><span class="nav-text">Laporan Harian Resto</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'">
+          <router-link to="/resto/settings" class="nav-link" active-class="active">
+            <i class="bi bi-gear"></i><span class="nav-text">Pengaturan Sistem Resto</span>
+          </router-link>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper flex-grow-1">
+      <!-- Header -->
+      <header class="top-header" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+        <button class="header-toggle" @click="toggleSidebar" id="btn-toggle-sidebar">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <div class="d-flex align-items-center gap-2">
+          <!-- Branch Selector -->
+          <div class="branch-selector" v-if="branchStore.userBranches.length > 0">
+            <select class="form-select form-select-sm" v-model="selectedBranchId" id="branch-select">
+              <option v-for="b in branchStore.userBranches" :key="b.uuid" :value="b.uuid">{{ b.name }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Theme Toggle -->
+          <button class="theme-toggle" @click="themeStore.toggle()" :title="themeStore.isDark ? 'Light Mode' : 'Dark Mode'">
+            <i :class="themeStore.isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill'"></i>
+          </button>
+          <!-- Notifications -->
+          <div class="dropdown">
+            <button class="notification-bell" data-bs-toggle="dropdown" id="btn-notifications">
+              <i class="bi bi-bell"></i>
+              <span class="badge rounded-pill bg-danger" v-if="notifStore.unreadCount(branchStore.currentBranchId) > 0">
+                {{ notifStore.unreadCount(branchStore.currentBranchId) }}
+              </span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end notification-dropdown">
+              <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                <strong>Notifikasi</strong>
+                <a href="#" class="text-primary small" @click.prevent="notifStore.markAllAsRead()">Tandai semua dibaca</a>
+              </div>
+              <div v-for="n in branchNotifications" :key="n.id" class="notification-item" :class="{ unread: !n.read }" @click="notifStore.markAsRead(n.id)">
+                <div class="d-flex align-items-start gap-2">
+                  <i class="bi" :class="notifIcon(n.type)"></i>
+                  <div>
+                    <div class="fw-semibold small">{{ n.title }}</div>
+                    <div class="text-muted small">{{ n.message }}</div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="branchNotifications.length === 0" class="p-3 text-center text-muted small">Tidak ada notifikasi</div>
+            </div>
+          </div>
+
+          <!-- User -->
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" id="btn-user-menu">
+              <i class="bi bi-person-circle me-1"></i>{{ authStore.user?.name }}
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><span class="dropdown-item-text small text-muted">{{ branchStore.currentBranch?.name }}</span></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" @click.prevent="handleLogout" id="btn-logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="main-content" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+        <router-view />
+      </main>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useBranchStore } from '@/stores/branch'
+import { useNotificationStore } from '@/stores/notification'
+import { useThemeStore } from '@/stores/theme'
+import { useCompanyStore } from '@/stores/company'
+
+const router = useRouter()
+const route  = useRoute()
+const authStore = useAuthStore()
+const branchStore = useBranchStore()
+const notifStore = useNotificationStore()
+const themeStore = useThemeStore()
+const companyStore = useCompanyStore()
+
+const localRestoName = ref(localStorage.getItem('resto_local_name') || 'Smart POS')
+
+const sidebarCollapsed = ref(false)
+const mobileOpen = ref(false)
+const openMenu = ref('')
+
+const isMobile = () => window.innerWidth <= 768
+
+// HR Manager check — termasuk super admin
+const isHrManager = computed(() =>
+  authStore.user?.is_super_admin ||
+  authStore.user?.roleNames?.includes('HR Manager') ||
+  authStore.hasPermission('hr:delete')
+)
+
+// Auto-open menu HR saat pertama kali masuk halaman HR
+onMounted(() => {
+  if (route.path.startsWith('/hr')) {
+    openMenu.value = 'hr'
+  } else if (route.path.startsWith('/inventory/reports')) {
+    openMenu.value = 'inventory-reports'
+  } else if (route.path.startsWith('/inventory')) {
+    openMenu.value = 'inventory'
+  }
+  
+  window.addEventListener('restoConfigUpdated', () => {
+    localRestoName.value = localStorage.getItem('resto_local_name') || 'Smart POS'
+  })
+})
+
+// Auto-close sidebar mobile saat berpindah halaman
+watch(() => route.path, () => {
+  if (isMobile()) mobileOpen.value = false
+})
+
+// v-model computed untuk branch select
+const selectedBranchId = computed({
+  get: () => branchStore.currentBranchId,
+  set: (val) => branchStore.selectBranch(val)
+})
+
+// Auto-select: jalan setelah auth.user populated;
+// reset jika stored branch bukan milik user ini (login berbeda)
+watch(
+  () => branchStore.userBranches,
+  (branches) => {
+    if (!branches.length) return
+    const isValid = branches.some(b => b.uuid === branchStore.currentBranchId)
+    if (!branchStore.currentBranchId || !isValid) {
+      branchStore.selectBranch(branches[0].uuid)
+    }
+  },
+  { immediate: true }
+)
+
+// Company info for display
+const companyName = computed(() => companyStore.currentCompanyName || authStore.user?.company_name || '')
+
+const branchNotifications = computed(() => notifStore.getByBranch(branchStore.currentBranchId))
+
+function toggleSidebar() {
+  if (isMobile()) {
+    mobileOpen.value = !mobileOpen.value
+  } else {
+    sidebarCollapsed.value = !sidebarCollapsed.value
+  }
+}
+function closeMobileSidebar() { mobileOpen.value = false }
+function toggleMenu(menu) { openMenu.value = openMenu.value === menu ? '' : menu }
+function notifIcon(type) {
+  const map = { warning: 'bi-exclamation-triangle-fill text-warning', info: 'bi-info-circle-fill text-info', danger: 'bi-exclamation-circle-fill text-danger', success: 'bi-check-circle-fill text-success' }
+  return map[type] || 'bi-bell'
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  branchStore.clearBranch()
+  companyStore.clearCompany()
+  router.push('/login')
+}
+</script>
