@@ -109,22 +109,42 @@ async function buildTokenPayload(userId, companyId) {
     };
 }
 
+const logger = require('../../utils/logger');
+
 // POST /api/settings/auth/login
 router.post('/login', authLimiter, asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ error: 'Email dan password diperlukan' });
+    if (!email || !password) {
+        logger.warn(`Login failed: missing email or password (IP: ${req.ip})`);
+        return res.status(400).json({ error: 'Email dan password diperlukan' });
+    }
+    
+    // Validasi sintaks email
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        logger.warn(`Login failed: invalid email format '${email}' (IP: ${req.ip})`);
+        return res.status(400).json({ error: 'Format email tidak valid' });
+    }
 
     const userResult = await query(
         `SELECT u.id, u.uuid, u.username, u.password_hash, u.name, u.email, u.phone, u.theme_preference, u.is_active, u.is_super_admin
          FROM users u WHERE u.email = $1`, [email]
     );
-    if (userResult.rows.length === 0) return res.status(401).json({ error: 'Email atau password salah' });
+    if (userResult.rows.length === 0) {
+        logger.warn(`Login failed: email not found '${email}' (IP: ${req.ip})`);
+        return res.status(401).json({ error: 'Email atau password salah' });
+    }
 
     const user = userResult.rows[0];
-    if (!user.is_active) return res.status(403).json({ error: 'Akun tidak aktif' });
+    if (!user.is_active) {
+        logger.warn(`Login failed: user '${email}' is inactive (IP: ${req.ip})`);
+        return res.status(403).json({ error: 'Akun tidak aktif' });
+    }
 
     const validPassword = await bcrypt.compare(password, user.password_hash);
-    if (!validPassword) return res.status(401).json({ error: 'Email atau password salah' });
+    if (!validPassword) {
+        logger.warn(`Login failed: invalid password for '${email}' (IP: ${req.ip})`);
+        return res.status(401).json({ error: 'Email atau password salah' });
+    }
 
     // Ambil companies yang bisa diakses user (+ branch & user count)
     let companies;
@@ -241,7 +261,23 @@ router.post('/refresh', asyncHandler(async (req, res) => {
     const compRow = decoded.company_uuid
         ? await query(`SELECT id FROM companies WHERE uuid = $1 AND is_active = true`, [decoded.company_uuid])
         : { rows: [{ id: null }] };
-    const { payload } = await buildTokenPayload(userId, compRow.rows[0]?.id || null);
+
+    const companyId = compRow.rows[0]?.id || null;
+
+    // VALIDATE COMPANY ACCESS (For non-superadmins)
+    if (companyId) {
+        const checkAdmin = await query(`SELECT is_super_admin FROM users WHERE id = $1`, [userId]);
+        const isSuperAdmin = checkAdmin.rows[0]?.is_super_admin;
+
+        if (!isSuperAdmin) {
+            const accessCheck = await query(`SELECT 1 FROM user_companies WHERE user_id = $1 AND company_id = $2`, [userId, companyId]);
+            if (accessCheck.rows.length === 0) {
+                return res.status(403).json({ error: 'Akses ke perusahaan ini telah dicabut.' });
+            }
+        }
+    }
+
+    const { payload } = await buildTokenPayload(userId, companyId);
     const newAccessToken = jwt.sign(payload, jwtSecret, { expiresIn: jwtExpiresIn });
     res.json({ accessToken: newAccessToken });
 }));

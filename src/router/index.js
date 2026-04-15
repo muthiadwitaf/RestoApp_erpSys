@@ -26,6 +26,7 @@ const routes = [
             { path: 'resto/tables', name: 'RestoTableMap', component: () => import('@/views/sales/RestoTableMapView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/menu', name: 'RestoMenu', component: () => import('@/views/sales/RestoMenuView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/pos', name: 'RestoPOS', component: () => import('@/views/sales/RestoPosView.vue'), meta: { permission: 'pos:view' } },
+            { path: 'resto/guide', name: 'RestoGuide', component: () => import('@/views/sales/RestoGuideView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/kitchen', name: 'RestoKitchen', component: () => import('@/views/sales/RestoKitchenView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/settings', name: 'RestoSettings', component: () => import('@/views/sales/PosSettingsView.vue'), meta: { permission: 'pos:view' } },
             
@@ -56,6 +57,14 @@ router.beforeEach((to, from, next) => {
     }
 
     if (to.meta.public) {
+        // If arriving at login with timeout flag, force-clear stale auth to prevent redirect loop
+        if (to.path === '/login' && to.query.timeout === '1') {
+            auth.user = null
+            localStorage.removeItem('erp_access_token')
+            localStorage.removeItem('erp_refresh_token')
+            localStorage.removeItem('erp_user')
+            return next()
+        }
         if (auth.isAuthenticated) return next(getDefaultRoute(auth))
         return next()
     }

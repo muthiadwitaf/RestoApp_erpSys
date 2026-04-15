@@ -293,7 +293,7 @@ router.post('/', requirePermission('hr:create'), asyncHandler(async (req, res) =
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('create','hr',$1,$2,$3,$4)`,
         [`Tambah karyawan: ${emp.nama_lengkap} (${emp.nik})`, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 
     res.status(201).json(emp);
 }));
@@ -355,7 +355,7 @@ router.put('/:uuid', requirePermission('hr:edit'), asyncHandler(async (req, res)
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('update','hr',$1,$2,$3,$4)`,
         [`Edit karyawan: ${empRes.rows[0].nama_lengkap}`, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'Data karyawan berhasil diupdate' });
 }));
@@ -401,7 +401,7 @@ router.patch('/:uuid/nonaktifkan', requirePermission('hr:edit'), asyncHandler(as
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('update','hr',$1,$2,$3,$4)`,
         [desc, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({
         message: `Karyawan ${nama_lengkap} berhasil dinonaktifkan`,
@@ -430,7 +430,7 @@ router.patch('/:uuid/aktifkan', requirePermission('hr:edit'), asyncHandler(async
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('update','hr',$1,$2,$3,$4)`,
         [`Aktifkan karyawan: ${nama_lengkap} (${nik})`, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: `Karyawan ${nama_lengkap} berhasil diaktifkan kembali` });
 }));
@@ -476,7 +476,7 @@ router.delete('/:uuid', requirePermission('hr:delete'), asyncHandler(async (req,
             `HARD DELETE karyawan: ${nama_lengkap} (${nik}) — dihapus permanen oleh ${req.user.name}`,
             req.user.id, req.user.name, req.user.branch_id,
         ]
-    ).catch(() => { });
+    );
 
     res.json({ message: `Karyawan ${nama_lengkap} berhasil dihapus permanen` });
 }));
@@ -862,7 +862,7 @@ router.post('/:uuid/create-user-account', requirePermission('hr:edit'), asyncHan
                     `Nama akun login diubah dari "${oldUser.name}" menjadi "${emp.nama_lengkap}" (sinkronisasi dari data karyawan ${emp.nik})`,
                     req.user.id, req.user.name, companyUuid
                 ]
-            ).catch(() => {});
+            );
         }
     } else {
         // Buat user baru
@@ -923,7 +923,7 @@ router.post('/:uuid/create-user-account', requirePermission('hr:edit'), asyncHan
             `${action} akun login untuk karyawan: ${emp.nama_lengkap} (${emp.nik}) -- email: ${emp.email_kerja}${roleName ? `, role: ${roleName}` : ''}`,
             req.user.id, req.user.name, companyUuid
         ]
-    ).catch(() => {});
+    );
 
     res.status(201).json({
         message: isReactivated ? 'Akun lama berhasil diaktifkan kembali dan dihubungkan' : 'Akun login berhasil dibuat',
@@ -997,7 +997,7 @@ router.post('/:uuid/link-existing-user', requirePermission('hr:edit'), asyncHand
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, company_uuid)
          VALUES ('update', 'hr', $1, $2, $3, $4)`,
         [auditDesc, req.user.id, req.user.name, companyUuid]
-    ).catch(() => {});
+    );
 
     if (nameChanged) {
         await query(
@@ -1007,7 +1007,7 @@ router.post('/:uuid/link-existing-user', requirePermission('hr:edit'), asyncHand
                 `Nama akun login diubah dari "${targetUser.name}" menjadi "${emp.nama_lengkap}" (sinkronisasi dari data karyawan ${emp.nik})`,
                 req.user.id, req.user.name, companyUuid
             ]
-        ).catch(() => {});
+        );
     }
 
     res.json({
@@ -1055,7 +1055,7 @@ router.post('/:uuid/unlink-user', requirePermission('hr:edit'), asyncHandler(asy
             `Putuskan link karyawan: ${emp.nama_lengkap} (${emp.nik}) -- akun ${emp.user_email} dinonaktifkan`,
             req.user.id, req.user.name, companyUuid
         ]
-    ).catch(() => {});
+    );
 
     res.json({
         message: `Akun ${emp.user_email} diputuskan dan dinonaktifkan`,

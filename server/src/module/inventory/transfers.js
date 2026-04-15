@@ -72,7 +72,7 @@ router.post('/', requirePermission('inventory:create'), asyncHandler(async (req,
 router.put('/:uuid/submit', requirePermission('inventory:edit'), asyncHandler(async (req, res) => {
     const result = await query(`UPDATE stock_transfers SET status='pending', updated_at=NOW() WHERE uuid=$1 AND status='draft' RETURNING uuid, number`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(400).json({ error: 'Transfer tidak dalam status draft' });
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('submit','inventory',$1,$2,$3)`, [`Submit Transfer ${result.rows[0].number}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('submit','inventory',$1,$2,$3)`, [`Submit Transfer ${result.rows[0].number}`, req.user.id, req.user.name]);
     res.json({ message: `${result.rows[0].number} berhasil disubmit` });
 }));
 
@@ -80,7 +80,7 @@ router.put('/:uuid/submit', requirePermission('inventory:edit'), asyncHandler(as
 router.put('/:uuid/approve', requirePermission('inventory:edit'), asyncHandler(async (req, res) => {
     const result = await query(`UPDATE stock_transfers SET status='approved', updated_at=NOW() WHERE uuid=$1 AND status='pending' RETURNING uuid, number`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(400).json({ error: 'Transfer tidak dalam status pending' });
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('approve','inventory',$1,$2,$3)`, [`Approve Transfer ${result.rows[0].number}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('approve','inventory',$1,$2,$3)`, [`Approve Transfer ${result.rows[0].number}`, req.user.id, req.user.name]);
     res.json({ message: `${result.rows[0].number} berhasil diapprove` });
 }));
 
@@ -108,7 +108,7 @@ router.put('/:uuid/ship', requirePermission('inventory:edit'), asyncHandler(asyn
         for (const l of lines.rows) {
             const convFactor = (l.uom && l.big_uom_name && l.uom === l.big_uom_name) ? (l.conversion_factor || 1) : 1;
             const baseQty = l.qty * convFactor;
-            const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2`, [l.item_id, fromWh]);
+            const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2 FOR UPDATE`, [l.item_id, fromWh]);
             const available = inv.rows[0]?.qty || 0;
             if (available < baseQty) {
                 await client.query('ROLLBACK');
@@ -124,7 +124,7 @@ router.put('/:uuid/ship', requirePermission('inventory:edit'), asyncHandler(asyn
         }
         await client.query(`UPDATE stock_transfers SET status='shipping', updated_at=NOW() WHERE id=$1`, [tfId]);
         await client.query('COMMIT');
-        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('ship','inventory',$1,$2,$3)`, [`Kirim Transfer ${tf.rows[0].number}`, req.user.id, req.user.name]).catch(() => { });
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('ship','inventory',$1,$2,$3)`, [`Kirim Transfer ${tf.rows[0].number}`, req.user.id, req.user.name]);
         res.json({ message: `${tf.rows[0].number} dalam proses pengiriman` });
     } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
 }));
@@ -157,7 +157,7 @@ router.put('/:uuid/receive', requirePermission('inventory:edit'), asyncHandler(a
         }
         await client.query(`UPDATE stock_transfers SET status='received', updated_at=NOW() WHERE id=$1`, [tfId]);
         await client.query('COMMIT');
-        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('receive','inventory',$1,$2,$3)`, [`Terima Transfer ${tf.rows[0].number}`, req.user.id, req.user.name]).catch(() => { });
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('receive','inventory',$1,$2,$3)`, [`Terima Transfer ${tf.rows[0].number}`, req.user.id, req.user.name]);
         res.json({ message: `${tf.rows[0].number} telah diterima` });
     } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
 }));

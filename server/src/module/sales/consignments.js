@@ -33,7 +33,7 @@ router.post('/', requirePermission('inventory:create'), asyncHandler(async (req,
     );
     const itemInfo = await query(`SELECT name, code FROM items WHERE id = $1`, [rItem]);
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`,
-        [`Tambah Konsinyasi: ${itemInfo.rows[0]?.code} - ${itemInfo.rows[0]?.name} (${qty} unit)`, req.user.id, req.user.name]).catch(() => { });
+        [`Tambah Konsinyasi: ${itemInfo.rows[0]?.code} - ${itemInfo.rows[0]?.name} (${qty} unit)`, req.user.id, req.user.name]);
     res.status(201).json(result.rows[0]);
 }));
 
@@ -54,7 +54,7 @@ router.put('/:uuid/sell', requirePermission('inventory:edit'), validateUUID(), a
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Konsinyasi tidak ditemukan' });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`,
-        [`Catat Penjualan Konsinyasi: ${qty_sold} unit`, req.user.id, req.user.name]).catch(() => { });
+        [`Catat Penjualan Konsinyasi: ${qty_sold} unit`, req.user.id, req.user.name]);
     res.json(result.rows[0]);
 }));
 
@@ -70,7 +70,7 @@ router.put('/:uuid', requirePermission('inventory:edit'), validateUUID(), asyncH
         [rSupplier, rItem, qty, commission_pct, rWarehouse, notes, c.rows[0].id]
     );
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`,
-        [`Update Konsinyasi: ${req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+        [`Update Konsinyasi: ${req.params.uuid}`, req.user.id, req.user.name]);
     res.json({ message: 'Konsinyasi berhasil diupdate' });
 }));
 
@@ -78,7 +78,7 @@ router.delete('/:uuid', requirePermission('inventory:delete'), validateUUID(), a
     const result = await query(`DELETE FROM consignments WHERE uuid = $1 RETURNING uuid`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Konsinyasi tidak ditemukan' });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','inventory',$1,$2,$3)`,
-        [`Hapus Konsinyasi: ${req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+        [`Hapus Konsinyasi: ${req.params.uuid}`, req.user.id, req.user.name]);
     res.json({ message: 'Konsinyasi berhasil dihapus' });
 }));
 

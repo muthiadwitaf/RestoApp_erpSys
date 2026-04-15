@@ -103,6 +103,18 @@ const loading = ref(false)
 const showDemoModal = ref(false)
 const isTimeout = ref(new URLSearchParams(window.location.search).get('timeout') === '1')
 
+// Safety net: if we arrived here due to session timeout, force-clear any stale auth state.
+// This prevents the router guard from finding leftover erp_user in localStorage and
+// redirecting us back to a protected route (which would 401 again → infinite loop).
+if (isTimeout.value) {
+  authStore.user = null
+  localStorage.removeItem('erp_access_token')
+  localStorage.removeItem('erp_refresh_token')
+  localStorage.removeItem('erp_user')
+  localStorage.removeItem('erp_branch')
+  localStorage.removeItem('erp-company')
+}
+
 const mtxSuperAdmins = [
   { name: 'Yusuf',   email: 'yusuf@mtx.web.id' },
   { name: 'Untung',  email: 'untung@mtx.web.id' },

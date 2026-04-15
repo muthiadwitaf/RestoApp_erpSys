@@ -90,7 +90,7 @@ router.post('/checkout', requirePermission('pos:create'), asyncHandler(async (re
                     const deductQty = comp.qty * item.qty;
                     if (warehouseId) {
                         // Validate stock
-                        const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2`, [rCompId, warehouseId]);
+                        const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2 FOR UPDATE`, [rCompId, warehouseId]);
                         const available = inv.rows[0]?.qty || 0;
                         if (available < deductQty) {
                             const compName = (await client.query(`SELECT name FROM items WHERE id=$1`, [rCompId])).rows[0]?.name || comp.item_name || 'Unknown';
@@ -118,7 +118,7 @@ router.post('/checkout', requirePermission('pos:create'), asyncHandler(async (re
                 const warehouseId = whResult.rows[0]?.id;
                 if (warehouseId) {
                     // Validate stock
-                    const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2`, [rItemId, warehouseId]);
+                    const inv = await client.query(`SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2 FOR UPDATE`, [rItemId, warehouseId]);
                     const available = inv.rows[0]?.qty || 0;
                     if (available < item.qty) {
                         const itemName = (await client.query(`SELECT name FROM items WHERE id=$1`, [rItemId])).rows[0]?.name || item.name || 'Unknown';
@@ -220,7 +220,7 @@ router.post('/checkout', requirePermission('pos:create'), asyncHandler(async (re
         }
 
         await client.query('COMMIT');
-        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','pos',$1,$2,$3,$4)`, [`POS Checkout ${result.rows[0].number} - Total: ${total}`, req.user.id, req.user.name, rBranch]).catch(() => { });
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','pos',$1,$2,$3,$4)`, [`POS Checkout ${result.rows[0].number} - Total: ${total}`, req.user.id, req.user.name, rBranch]);
         res.status(201).json(result.rows[0]);
     } catch (err) {
         await client.query('ROLLBACK');

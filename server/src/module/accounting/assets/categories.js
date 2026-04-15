@@ -193,7 +193,7 @@ async function auditLog(req, action, description) {
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ($1,'accounting',$2,$3,$4,$5)`,
         [action, description, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 }
 
 module.exports = router;

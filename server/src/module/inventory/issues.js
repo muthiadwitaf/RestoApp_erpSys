@@ -198,7 +198,7 @@ router.put('/:uuid/approve', requirePermission('inventory:approve', 'inventory:m
             const baseQty = line.qty * convFactor;
 
             const inv = await client.query(
-                `SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2`,
+                `SELECT COALESCE(qty, 0) as qty FROM inventory WHERE item_id=$1 AND warehouse_id=$2 FOR UPDATE`,
                 [line.item_id, rWh]
             );
             const available = inv.rows[0]?.qty || 0;

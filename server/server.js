@@ -4,6 +4,7 @@ const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const xssClean = require('xss-clean');
+const compression = require('compression');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
 const { errorHandler } = require('./src/middleware/errorHandler');
 
@@ -15,8 +16,22 @@ app.use(helmet({
     contentSecurityPolicy: false,  // disabled for serving SPA
     crossOriginEmbedderPolicy: false,
 }));
-app.use(cors());
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').includes(origin))) {
+            callback(null, true);
+        } else if (!process.env.CORS_ORIGIN) {
+            callback(null, origin || '*'); // reflect origin if no strict CORS defined
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    optionsSuccessStatus: 200,
+    credentials: true
+};
+app.use(cors(corsOptions));
 app.use(xssClean());
+app.use(compression());
 
 // ── Body Parsing ──
 app.use(express.json({ limit: '10mb' }));

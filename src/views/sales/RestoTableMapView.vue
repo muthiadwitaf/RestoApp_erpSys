@@ -3,18 +3,18 @@
     <!-- Header -->
     <div class="rtm-header">
       <div class="rtm-header-left">
-        <h4 class="rtm-title"><i class="bi bi-aspect-ratio text-primary"></i> Pengaturan Denah Meja</h4>
+        <h4 class="rtm-title"><i class="bi bi-aspect-ratio text-primary"></i> {{ t('table_map') }}</h4>
       </div>
       <div class="rtm-header-right d-flex gap-2">
         <button class="btn btn-sm" :class="editMode ? 'btn-primary' : 'btn-outline-secondary'" @click="toggleEditMode" id="btn-edit-mode">
           <i class="bi" :class="editMode ? 'bi-pencil-square' : 'bi-eye'"></i>
-          {{ editMode ? 'Mode Edit Aktif' : 'Atur Denah / Edit Mode' }}
+          {{ editMode ? t('edit_mode') : t('organize_tables') }}
         </button>
         <button v-if="editMode" class="btn btn-sm btn-success" @click="saveLayout" id="btn-save-layout">
-          <i class="bi bi-check-lg"></i> Simpan Denah
+          <i class="bi bi-check-lg"></i> {{ t('save_map') }}
         </button>
-        <button v-if="editMode" class="btn btn-sm btn-light border" @click="openAddTableModal" id="btn-add-table">
-          <i class="bi bi-plus-lg text-primary"></i> Tambah Meja
+        <button v-if="editMode" class="btn btn-sm btn-light border dropdown-btn" @click="openAddTableModal" id="btn-add-table">
+          <i class="bi bi-plus-lg text-primary"></i> {{ t('add_table') }}
         </button>
       </div>
     </div>
@@ -111,8 +111,8 @@
 
         <div v-if="filteredTables.length === 0 && !loading" class="rtm-empty">
            <img src="https://cdn-icons-png.flaticon.com/512/7513/7513361.png" alt="Empty table map" class="empty-icon-img" style="width: 80px; opacity: 0.2; margin-bottom: 16px;">
-          <p class="text-muted fw-bold mb-1">Denah Meja Kosong</p>
-          <p class="text-muted small">Aktifkan <strong>Mode Edit</strong> dan tambah meja baru untuk memulai layout area ini.</p>
+          <h4 class="text-secondary fw-bold">{{ t('empty_tables') }}</h4>
+          <p class="text-muted small">{{ t('enable_edit_mode_to_start') }}</p>
         </div>
       </div>
     </div>
@@ -125,41 +125,41 @@
           <div class="info-avatar mx-auto mb-2" :class="`bg-status-${selectedTable.status}-light text-status-${selectedTable.status}`">
             <i class="bi bi-hdd-stack-fill fs-3"></i>
           </div>
-          <h4 class="fw-bold mb-0">Meja {{ selectedTable.number }}</h4>
+          <h4 class="fw-bold mb-0">{{ t('table') }} {{ selectedTable.number }}</h4>
           <span class="badge mt-2 border" :class="`bg-status-${selectedTable.status}-light text-status-${selectedTable.status}`">
             {{ statusLabel(selectedTable.status) }}
           </span>
         </div>
         
         <div class="rtm-info-body p-4">
-          <h6 class="text-uppercase text-muted fw-bold mb-3 fs-8">Informasi Meja</h6>
+          <h6 class="text-uppercase text-muted fw-bold mb-3 fs-8">{{ t('table_info') }}</h6>
           <div class="info-detail-row">
-            <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>Area Ruangan</span>
-            <span class="fw-bold text-dark">{{ selectedTable.room_name || 'Tanpa Ruangan' }}</span>
+            <span class="text-muted"><i class="bi bi-geo-alt me-2"></i>{{ t('room_area') }}</span>
+            <span class="fw-bold text-dark">{{ selectedTable.room_name || t('no_room') }}</span>
           </div>
           <div class="info-detail-row">
-            <span class="text-muted"><i class="bi bi-people me-2"></i>Kapasitas</span>
-            <span class="fw-bold text-dark">{{ selectedTable.capacity }} Orang</span>
+            <span class="text-muted"><i class="bi bi-people me-2"></i>{{ t('capacity') }}</span>
+            <span class="fw-bold text-dark">{{ selectedTable.capacity }} {{ t('people') }}</span>
           </div>
           <div class="info-detail-row" v-if="selectedTable.label">
-            <span class="text-muted"><i class="bi bi-tag me-2"></i>Label</span>
+            <span class="text-muted"><i class="bi bi-tag me-2"></i>{{ t('label') }}</span>
             <span class="fw-bold text-dark">{{ selectedTable.label }}</span>
           </div>
 
           <!-- Order details -->
           <template v-if="selectedTableOrder">
-            <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 fs-8">Pesanan Berjalan</h6>
+            <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 fs-8">{{ t('active_order') }}</h6>
             <div class="card border-0 bg-light p-3 rounded-3 mb-4">
               <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted small">No. Pesanan</span>
+                <span class="text-muted small">{{ t('order_number') }}</span>
                 <span class="fw-bold">{{ selectedTableOrder.order_number }}</span>
               </div>
               <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted small">Total Tagihan</span>
+                <span class="text-muted small">{{ t('total_bill') }}</span>
                 <span class="fw-bold text-primary">Rp {{ formatMoney(selectedTableOrder.total) }}</span>
               </div>
               <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted small">Status</span>
+                <span class="text-muted small">{{ t('status') }}</span>
                 <span class="badge" :class="orderStatusBadge(selectedTableOrder.status)">{{ orderStatusLabel(selectedTableOrder.status) }}</span>
               </div>
             </div>
@@ -168,34 +168,34 @@
           <div class="rtm-actions mt-4 pt-4 border-top">
             <button v-if="selectedTable.status === 'available'" class="btn btn-primary w-100 py-2 fw-bold mb-2"
                     @click="openNewOrder(selectedTable)" id="btn-new-order">
-              <i class="bi bi-plus-circle me-1"></i> Buat Pesanan Baru
+              <i class="bi bi-plus-circle me-1"></i> {{ t('create_order') }}
             </button>
             <button v-if="selectedTable.status === 'occupied' && selectedTableOrder" class="btn btn-primary w-100 py-2 fw-bold mb-2"
                     @click="openOrder(selectedTableOrder)" id="btn-view-order">
-              <i class="bi bi-receipt me-1"></i> Lihat Rincian Pesanan
+              <i class="bi bi-receipt me-1"></i> {{ t('view_order') }}
             </button>
             <button v-if="editMode" class="btn btn-outline-primary w-100 py-2 mt-2 fw-bold"
                     @click="openEditTableModal(selectedTable)" id="btn-edit-table">
-              <i class="bi bi-pencil-square me-1"></i>Edit Data Meja
+              <i class="bi bi-pencil-square me-1"></i>{{ t('edit_table_data') }}
             </button>
 
             <!-- Status Change Buttons -->
-            <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 fs-8">Ubah Status Meja</h6>
+            <h6 class="text-uppercase text-muted fw-bold mt-4 mb-3 fs-8">{{ t('change_status') }}</h6>
             <div class="d-flex flex-wrap gap-2">
               <button v-if="selectedTable.status !== 'available' && !selectedTableOrder"
                       class="btn btn-sm btn-outline-success flex-fill"
                       @click="changeTableStatus('available')">
-                <i class="bi bi-check-circle me-1"></i> Tersedia
+                <i class="bi bi-check-circle me-1"></i> {{ t('available') }}
               </button>
               <button v-if="selectedTable.status !== 'reserved'"
                       class="btn btn-sm btn-outline-warning flex-fill"
                       @click="changeTableStatus('reserved')">
-                <i class="bi bi-bookmark-star me-1"></i> Reservasi
+                <i class="bi bi-bookmark-star me-1"></i> {{ t('reserved') }}
               </button>
               <button v-if="selectedTable.status !== 'cleaning'"
                       class="btn btn-sm btn-outline-secondary flex-fill"
                       @click="changeTableStatus('cleaning')">
-                <i class="bi bi-droplet-half me-1"></i> Perlu Bersih
+                <i class="bi bi-droplet-half me-1"></i> {{ t('cleaning') }}
               </button>
             </div>
           </div>
@@ -203,103 +203,105 @@
       </div>
     </transition>
 
-    <!-- Modal Tambah/Edit Ruangan -->
-    <div v-if="showAddRoom" class="modal-backdrop show" @click.self="showAddRoom = false">
-      <div class="rtm-modal">
-        <div class="rtm-modal-header bg-light">
-          <h5 class="fw-bold mb-0">{{ roomForm.uuid ? 'Edit Ruangan' : 'Tambah Ruangan/Area' }}</h5>
-          <button class="btn-close" @click="showAddRoom = false"></button>
-        </div>
-        <div class="rtm-modal-body p-4">
-          <div class="mb-3">
-            <label class="form-label fw-bold text-muted small">Nama Area *</label>
-            <input v-model="roomForm.name" class="form-control form-control-lg fs-6" placeholder="Misal: Lantai 1, Outdoor" id="input-room-name" />
+    <Teleport to="body">
+      <!-- Modal Tambah/Edit Ruangan -->
+      <div v-if="showAddRoom" class="modal-backdrop show" @click.self="showAddRoom = false">
+        <div class="rtm-modal">
+          <div class="rtm-modal-header bg-light">
+            <h5 class="fw-bold mb-0">{{ roomForm.uuid ? t('edit_room') : t('add_room') }}</h5>
+            <button class="btn-close" @click="showAddRoom = false"></button>
           </div>
-          <div class="mb-2">
-            <label class="form-label fw-bold text-muted small">Catatan Singkat</label>
-            <textarea v-model="roomForm.description" class="form-control" rows="2" id="input-room-desc"></textarea>
+          <div class="rtm-modal-body p-4">
+            <div class="mb-3">
+              <label class="form-label fw-bold text-muted small">{{ t('room_name') }} *</label>
+              <input v-model="roomForm.name" class="form-control form-control-lg fs-6" :placeholder="t('placeholder_room_name')" id="input-room-name" />
+            </div>
+            <div class="mb-2">
+              <label class="form-label fw-bold text-muted small">{{ t('description') }}</label>
+              <textarea v-model="roomForm.description" class="form-control" rows="2" id="input-room-desc"></textarea>
+            </div>
           </div>
-        </div>
-        <div class="rtm-modal-footer bg-light p-3 d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-secondary px-4" @click="showAddRoom = false">Batal</button>
-          <button class="btn btn-primary px-4" @click="saveRoom" :disabled="!roomForm.name" id="btn-save-room">Simpan Area</button>
+          <div class="pb-3 px-3 d-flex justify-content-end gap-2 border-top pt-3 mt-2 bg-body-tertiary">
+            <button class="btn btn-secondary px-4 fw-medium" @click="showAddRoom = false">{{ t('close') }}</button>
+            <button class="btn btn-primary px-4 fw-medium" @click="saveRoom" :disabled="!roomForm.name" id="btn-save-room">{{ t('save') }}</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal Tambah/Edit Meja -->
-    <div v-if="showAddTable" class="modal-backdrop show" @click.self="showAddTable = false">
-      <div class="rtm-modal">
-        <div class="rtm-modal-header bg-light">
-          <h5 class="fw-bold mb-0">{{ tableForm.uuid ? 'Edit Data Meja' : 'Pengaturan Meja Baru' }}</h5>
-          <button class="btn-close" @click="showAddTable = false"></button>
-        </div>
-        <div class="rtm-modal-body p-4">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold text-muted small">Nomor Meja *</label>
-              <input v-model="tableForm.number" class="form-control" placeholder="Contoh: 01, A1" id="input-table-number" />
+      <!-- Modal Tambah/Edit Meja -->
+      <div v-if="showAddTable" class="modal-backdrop show" @click.self="showAddTable = false">
+        <div class="rtm-modal">
+          <div class="rtm-modal-header bg-light">
+            <h5 class="fw-bold mb-0">{{ tableForm.uuid ? t('edit_table') : t('add_table') }}</h5>
+            <button class="btn-close" @click="showAddTable = false"></button>
+          </div>
+          <div class="rtm-modal-body p-4">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted small">{{ t('table_number') }} *</label>
+                <input v-model="tableForm.number" class="form-control" :placeholder="t('placeholder_table_number')" id="input-table-number" />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold text-muted small">{{ t('capacity') }}</label>
+                <input v-model.number="tableForm.capacity" type="number" class="form-control" min="1" id="input-table-capacity" />
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label fw-bold text-muted small">Kapasitas (Orang)</label>
-              <input v-model.number="tableForm.capacity" type="number" class="form-control" min="1" id="input-table-capacity" />
+            <div class="mb-3">
+              <label class="form-label fw-bold text-muted small">{{ t('label') }} ({{ t('optional') }})</label>
+              <input v-model="tableForm.label" class="form-control" :placeholder="t('placeholder_table_label')" id="input-table-label" />
+            </div>
+            <div class="row mb-3">
+              <div class="col-sm-6">
+                <label class="form-label fw-bold text-muted small">{{ t('select_room') }}</label>
+                <select v-model="tableForm.room_id" class="form-select" id="select-table-room">
+                  <option :value="null">-- {{ t('no_room') }} --</option>
+                  <option v-for="r in rooms" :key="r.uuid" :value="r.uuid">{{ r.name }}</option>
+                </select>
+              </div>
+              <div class="col-sm-6" v-if="tableForm.uuid">
+                <label class="form-label fw-bold text-muted small">{{ t('status') }}</label>
+                <select v-model="tableForm.status" class="form-select" id="select-table-status">
+                  <option value="available">{{ t('available') }}</option>
+                  <option value="occupied">{{ t('occupied') }}</option>
+                  <option value="reserved">{{ t('reserved') }}</option>
+                  <option value="cleaning">{{ t('cleaning') }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-2">
+               <label class="form-label fw-bold text-muted small">{{ t('table_shape') }}</label>
+               <div class="d-flex gap-3 mt-1">
+                 <label class="shape-selector">
+                   <input type="radio" v-model="tableForm.shape" value="square" name="t_shape" class="d-none">
+                   <div class="shape-box" :class="{ 'active': tableForm.shape === 'square' }">
+                     <div style="width:30px;height:30px;background:#ddd;border-radius:4px"></div>
+                     <span>{{ t('square') }}</span>
+                   </div>
+                 </label>
+                 <label class="shape-selector">
+                   <input type="radio" v-model="tableForm.shape" value="round" name="t_shape" class="d-none">
+                   <div class="shape-box" :class="{ 'active': tableForm.shape === 'round' }">
+                     <div style="width:30px;height:30px;background:#ddd;border-radius:50%"></div>
+                     <span>{{ t('round') }}</span>
+                   </div>
+                 </label>
+                 <label class="shape-selector">
+                   <input type="radio" v-model="tableForm.shape" value="rectangle" name="t_shape" class="d-none">
+                   <div class="shape-box" :class="{ 'active': tableForm.shape === 'rectangle' }">
+                     <div style="width:40px;height:24px;background:#ddd;border-radius:4px"></div>
+                     <span>{{ t('rectangle') }}</span>
+                   </div>
+                 </label>
+               </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold text-muted small">Label Keterangan (Opsional)</label>
-            <input v-model="tableForm.label" class="form-control" placeholder="Misal: Dekat Ac, Teras Depan" id="input-table-label" />
+          <div class="pb-3 px-3 d-flex justify-content-end gap-2 border-top pt-3 mt-2 bg-body-tertiary">
+            <button class="btn btn-secondary px-4 fw-medium" @click="showAddTable = false">{{ t('close') }}</button>
+            <button class="btn btn-primary px-4 fw-medium" @click="saveTable" :disabled="!tableForm.number" id="btn-save-table">{{ t('save') }}</button>
           </div>
-          <div class="row mb-3">
-            <div class="col-sm-6">
-              <label class="form-label fw-bold text-muted small">Pilih Area Penempatan</label>
-              <select v-model="tableForm.room_id" class="form-select" id="select-table-room">
-                <option :value="null">-- Tidak Masuk Area --</option>
-                <option v-for="r in rooms" :key="r.uuid" :value="r.uuid">{{ r.name }}</option>
-              </select>
-            </div>
-            <div class="col-sm-6" v-if="tableForm.uuid">
-              <label class="form-label fw-bold text-muted small">Status Meja</label>
-              <select v-model="tableForm.status" class="form-select" id="select-table-status">
-                <option value="available">Tersedia (Kosong)</option>
-                <option value="occupied">Terisi (Pesanan)</option>
-                <option value="reserved">Reservasi</option>
-                <option value="cleaning">Perlu Dibersihkan</option>
-              </select>
-            </div>
-          </div>
-          <div class="mb-2">
-             <label class="form-label fw-bold text-muted small">Bentuk Visual Meja</label>
-             <div class="d-flex gap-3 mt-1">
-               <label class="shape-selector">
-                 <input type="radio" v-model="tableForm.shape" value="square" name="t_shape" class="d-none">
-                 <div class="shape-box" :class="{ 'active': tableForm.shape === 'square' }">
-                   <div style="width:30px;height:30px;background:#ddd;border-radius:4px"></div>
-                   <span>Kotak</span>
-                 </div>
-               </label>
-               <label class="shape-selector">
-                 <input type="radio" v-model="tableForm.shape" value="round" name="t_shape" class="d-none">
-                 <div class="shape-box" :class="{ 'active': tableForm.shape === 'round' }">
-                   <div style="width:30px;height:30px;background:#ddd;border-radius:50%"></div>
-                   <span>Bulat</span>
-                 </div>
-               </label>
-               <label class="shape-selector">
-                 <input type="radio" v-model="tableForm.shape" value="rectangle" name="t_shape" class="d-none">
-                 <div class="shape-box" :class="{ 'active': tableForm.shape === 'rectangle' }">
-                   <div style="width:40px;height:24px;background:#ddd;border-radius:4px"></div>
-                   <span>Panjang</span>
-                 </div>
-               </label>
-             </div>
-          </div>
-        </div>
-        <div class="rtm-modal-footer bg-light p-3 d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-secondary px-4" @click="showAddTable = false">Batal</button>
-          <button class="btn btn-primary px-4" @click="saveTable" :disabled="!tableForm.number" id="btn-save-table">Simpan Meja</button>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Loading -->
     <div v-if="loading" class="rtm-loading">
@@ -312,7 +314,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getRestoRooms, createRestoRoom, updateRestoRoom, deleteRestoRoom, getRestoTables, createRestoTable, updateRestoTable, deleteRestoTable, saveRestoLayout, getRestoOrders } from '@/services/sales/restoApi'
+import { useLang } from '@/composables/useLang'
 
+const { t } = useLang()
 const router = useRouter()
 
 const loading = ref(false)
@@ -561,10 +565,10 @@ function formatMoney(val) {
   return new Intl.NumberFormat('id-ID').format(parseFloat(val) || 0)
 }
 function statusLabel(s) {
-  return { available: 'Meja Tersedia', occupied: 'Sedang Terisi', reserved: 'Telah Direservasi', cleaning: 'Perlu Dibersihkan' }[s] || s
+  return { available: t('available'), occupied: t('occupied'), reserved: t('reserved'), cleaning: t('cleaning') }[s] || s
 }
 function orderStatusLabel(s) {
-  return { new: 'Antrian Baru', cooking: 'Proses Dapur', ready: 'Makanan Siap', served: 'Sudah Disajikan', paid: 'Lunas', cancelled: 'Dibatalkan' }[s] || s
+  return { new: t('new_order'), cooking: t('cooking'), ready: t('ready'), served: t('served'), paid: t('paid'), cancelled: t('cancelled') }[s] || s
 }
 function orderStatusBadge(s) {
   return { new: 'bg-info', cooking: 'bg-warning text-dark', ready: 'bg-success', served: 'bg-primary', paid: 'bg-secondary', cancelled: 'bg-danger' }[s] || 'bg-secondary'
@@ -597,8 +601,10 @@ async function changeTableStatus(newStatus) {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 60px);
+  background-color: var(--bs-secondary-bg);
+  position: relative;
+  overflow: hidden;
   font-family: 'Inter', -apple-system, sans-serif;
-  background-color: #f8fafc; /* bg-slate-50 */
 }
 
 /* Header */
@@ -607,15 +613,15 @@ async function changeTableStatus(newStatus) {
   justify-content: space-between;
   align-items: center;
   padding: 12px 24px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-color);
   z-index: 10;
 }
 .rtm-title {
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--bs-heading-color);
 }
 
 /* Main Body Area */
@@ -630,21 +636,22 @@ async function changeTableStatus(newStatus) {
 .rtm-rooms {
   width: 250px;
   min-width: 250px;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--bs-border-color);
   display: flex;
   flex-direction: column;
   z-index: 5;
+  background: var(--bs-body-bg);
 }
 .rtm-rooms-header {
   padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--bs-border-color);
 }
 .rtm-rooms-title {
   font-weight: 700;
-  color: #475569;
+  color: var(--bs-secondary-color);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -662,7 +669,7 @@ async function changeTableStatus(newStatus) {
   margin-bottom: 6px;
   cursor: pointer;
   font-size: 0.95rem;
-  color: #334155;
+  color: var(--bs-body-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -671,34 +678,26 @@ async function changeTableStatus(newStatus) {
   border: 1px solid transparent;
 }
 .rtm-room-list li:hover {
-  background-color: #f8fafc;
-  border-color: #e2e8f0;
-  transform: translateX(4px);
+  background-color: var(--bs-tertiary-bg);
 }
 .rtm-room-list li.active {
-  background-color: #eff6ff;
-  color: #2563eb;
+  background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary);
   font-weight: 700;
-  border-color: #bfdbfe;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05);
-}
-.rtm-room-list li.active .badge {
-  background-color: #dbeafe !important;
-  color: #1d4ed8 !important;
-  border-color: #bfdbfe !important;
+  border-color: var(--bs-primary-border-subtle);
 }
 
 /* Legend */
 .rtm-legend {
   padding: 20px;
-  background-color: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background-color: var(--bs-secondary-bg);
+  border-top: 1px solid var(--bs-border-color);
 }
 .rtm-legend-title {
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--bs-secondary-color);
   margin-bottom: 12px;
 }
 .rtm-legend-item {
@@ -706,7 +705,7 @@ async function changeTableStatus(newStatus) {
   align-items: center;
   gap: 10px;
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--bs-body-color);
   margin-bottom: 8px;
 }
 .legend-box {
@@ -714,17 +713,17 @@ async function changeTableStatus(newStatus) {
   height: 14px;
   border-radius: 3px;
 }
-.legend-box.available { background: #10b981; } /* emerald-500 */
-.legend-box.occupied { background: #ef4444; } /* red-500 */
-.legend-box.reserved { background: #f59e0b; } /* amber-500 */
-.legend-box.cleaning { background: #64748b; } /* slate-500 */
+.legend-box.available { background: var(--bs-success); }
+.legend-box.occupied { background: var(--bs-danger); }
+.legend-box.reserved { background: var(--bs-warning); }
+.legend-box.cleaning { background: var(--bs-secondary); }
 
 /* Canvas / Background */
 .rtm-canvas-container {
   flex: 1;
   overflow: auto;
   position: relative;
-  background-color: #f1f5f9; /* Soft gray canvas background typical of Majoo */
+  background-color: var(--bs-secondary-bg);
 }
 .rtm-canvas {
   position: relative;
@@ -734,7 +733,7 @@ async function changeTableStatus(newStatus) {
 .rtm-grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+  background-image: radial-gradient(var(--bs-border-color) 1.5px, transparent 1.5px);
   background-size: 20px 20px;
   pointer-events: none;
 }
@@ -927,7 +926,8 @@ async function changeTableStatus(newStatus) {
 .rtm-info-panel {
   width: 340px;
   min-width: 340px;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
   display: flex;
   flex-direction: column;
   z-index: 20;
@@ -961,7 +961,7 @@ async function changeTableStatus(newStatus) {
 .rtm-loading {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--bs-body-bg-rgb), 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -979,7 +979,7 @@ async function changeTableStatus(newStatus) {
   position: fixed; inset:0;
 }
 .rtm-modal {
-  background: #fff;
+  background: var(--bs-body-bg);
   border-radius: 12px;
   width: 500px;
   max-width: 95vw;

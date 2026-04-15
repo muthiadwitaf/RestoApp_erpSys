@@ -70,7 +70,7 @@ router.put('/', requirePermission('settings:edit'), asyncHandler(async (req, res
         `INSERT INTO audit_trail (action, module, description, user_id, user_name)
          VALUES ('update', 'settings', $1, $2, $3)`,
         [auditDesc, req.user.id, req.user.name]
-    ).catch(() => { });
+    );
 
     res.json(result.rows[0]);
 }));

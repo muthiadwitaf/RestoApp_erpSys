@@ -85,7 +85,7 @@ router.post('/', requirePermission('accounting:create'), asyncHandler(async (req
     for (const l of resolvedLines) {
         await query(`INSERT INTO journal_lines (journal_id, account_id, debit, credit, description) VALUES ($1,$2,$3,$4,$5)`, [result.rows[0].id, l.account_id, l.debit, l.credit, l.description]);
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','accounting',$1,$2,$3,$4)`, [`Buat jurnal: ${result.rows[0].number}`, req.user.id, req.user.name, branchIntId]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','accounting',$1,$2,$3,$4)`, [`Buat jurnal: ${result.rows[0].number}`, req.user.id, req.user.name, branchIntId]);
     const { id: _jid, ...safeJournal } = result.rows[0];
     res.status(201).json(safeJournal);
 }));
@@ -113,7 +113,7 @@ router.put('/:uuid/post', requirePermission('accounting:approve'), validateUUID(
         }
         await client.query('COMMIT');
         await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('approve','accounting',$1,$2,$3,$4)`,
-            [`Post Jurnal: ${jeNum} -- saldo akun diupdate`, req.user.id, req.user.name, jeBranch]).catch(() => { });
+            [`Post Jurnal: ${jeNum} -- saldo akun diupdate`, req.user.id, req.user.name, jeBranch]);
         res.json({ message: `Jurnal ${jeNum} berhasil diposting, saldo akun diupdate` });
     } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
 }));
@@ -135,7 +135,7 @@ router.delete('/:uuid', requirePermission('accounting:create'), validateUUID(), 
     await query(`DELETE FROM journal_lines WHERE journal_id = $1`, [je.id]);
     await query(`DELETE FROM journal_entries WHERE id = $1`, [je.id]);
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('delete','accounting',$1,$2,$3,$4)`,
-        [`Hapus Jurnal: ${je.number}`, req.user.id, req.user.name, je.branch_id]).catch(() => { });
+        [`Hapus Jurnal: ${je.number}`, req.user.id, req.user.name, je.branch_id]);
     res.json({ message: `Jurnal ${je.number} berhasil dihapus` });
 }));
 

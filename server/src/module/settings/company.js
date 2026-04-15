@@ -67,7 +67,7 @@ router.put('/', requirePermission('settings:edit'), asyncHandler(async (req, res
     if (result.rows.length === 0) return res.status(404).json({ error: 'Company tidak ditemukan' });
 
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, company_id) VALUES ('update','settings',$1,$2,$3,$4)`,
-        [`Update profil perusahaan: ${company_name}`, req.user.id, req.user.name, companyId]).catch(() => { });
+        [`Update profil perusahaan: ${company_name}`, req.user.id, req.user.name, companyId]);
 
     res.json({ message: 'Profil perusahaan berhasil diupdate', data: result.rows[0] });
 }));

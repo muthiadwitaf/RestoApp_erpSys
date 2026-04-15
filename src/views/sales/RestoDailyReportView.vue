@@ -98,7 +98,14 @@
                     <span class="badge bg-primary bg-opacity-10 text-primary p-2 rounded-circle"><i class="bi bi-credit-card fs-5"></i></span>
                     <span class="fw-semibold">Transfer / Kartu</span>
                   </div>
-                  <span class="fw-bold fs-5">{{ formatCurrency(reportData.payment_breakdown.card) }}</span>
+                  <span class="fw-bold fs-5">{{ formatCurrency(reportData.payment_breakdown.transfer) }}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center py-3 border-bottom-0">
+                  <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-credit-card fs-5"></i></span>
+                    <span class="fw-semibold">Debit / EDC</span>
+                  </div>
+                  <span class="fw-bold fs-5">{{ formatCurrency(reportData.payment_breakdown.debit) }}</span>
                 </div>
               </div>
             </div>
@@ -111,31 +118,25 @@
             <div class="card-header bg-white py-3">
               <h6 class="fw-bold mb-0"><i class="bi bi-star-fill text-warning me-2"></i>Menu Terlaris (Top 10)</h6>
             </div>
-            <div class="card-body p-0">
+            <div class="card-body p-0 pb-3">
               <div v-if="reportData.best_selling.length === 0" class="p-4 text-center text-muted">
                 Belum ada data penjualan menu.
               </div>
-              <ul v-else class="list-group list-group-flush list-group-numbered">
-                <li v-for="(item, idx) in reportData.best_selling.slice(0, 5)" :key="idx" 
-                    class="list-group-item d-flex justify-content-between align-items-start py-2 border-0">
-                  <div class="ms-2 me-auto fw-semibold text-truncate">{{ item.name }}</div>
-                  <span class="badge bg-primary rounded-pill">{{ item.qty }} porsi</span>
-                </li>
-              </ul>
-              <div class="text-center pt-2 pb-3" v-if="reportData.best_selling.length > 5">
-                <button class="btn btn-sm btn-link text-decoration-none" @click="showAllBestSellers = !showAllBestSellers">
-                  {{ showAllBestSellers ? 'Tutup' : `Lihat ${reportData.best_selling.length - 5} lainnya...` }}
-                </button>
-                <div v-if="showAllBestSellers">
-                  <ul class="list-group list-group-flush list-group-numbered text-start mt-2">
-                    <li v-for="(item, idx) in reportData.best_selling.slice(5)" :key="idx+5" 
-                        class="list-group-item d-flex justify-content-between align-items-start py-2 border-0">
-                      <div class="ms-2 me-auto text-muted fw-semibold text-truncate">{{ item.name }}</div>
-                      <span class="badge bg-secondary rounded-pill">{{ item.qty }} porsi</span>
-                    </li>
-                  </ul>
+              <template v-else>
+                <ul class="list-group list-group-flush list-group-numbered">
+                  <li v-for="(item, idx) in reportData.best_selling.slice(0, showAllBestSellers ? 10 : 5)" :key="idx" 
+                      class="list-group-item d-flex justify-content-between align-items-start py-2 border-0">
+                    <div class="ms-2 me-auto fw-semibold text-truncate">{{ item.name }}</div>
+                    <span class="badge bg-primary rounded-pill">{{ item.qty }} porsi</span>
+                  </li>
+                </ul>
+                <div class="text-center px-3" v-if="reportData.best_selling.length > 5">
+                  <button class="btn btn-sm btn-outline-primary w-100 mt-2" @click="showAllBestSellers = !showAllBestSellers">
+                    <i class="bi" :class="showAllBestSellers ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+                    {{ showAllBestSellers ? 'Tutup' : `Lihat ${reportData.best_selling.length - 5} lainnya...` }}
+                  </button>
                 </div>
-              </div>
+              </template>
             </div>
           </div>
         </div>
@@ -227,20 +228,66 @@
         </div>
       </div>
 
+      <!-- 6. WAITER PERFORMANCE REPORT -->
+      <div class="card border-0 shadow-sm mb-5 mt-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0"><i class="bi bi-people-fill text-warning me-2"></i>Laporan Performa & Insentif Karyawan (Waiter)</h6>
+          <span class="badge bg-light text-dark border"><i class="bi bi-percent me-1"></i>Tingkat Komisi: {{ commissionRate }}%</span>
+        </div>
+        <div class="card-body p-0">
+          <div v-if="waitersReport && waitersReport.length > 0" class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4 py-3">Nama Karyawan/Waiter</th>
+                  <th class="text-center py-3">Pesanan Ditangani</th>
+                  <th class="text-end py-3">Total Omset Dikelola</th>
+                  <th class="text-end pe-4 py-3 text-success">Estimasi Komisi Disetujui</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="w in waitersReport" :key="w.uuid">
+                  <td class="ps-4 py-3 fw-bold">
+                    <div class="d-flex align-items-center gap-2">
+                       <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                          <i class="bi bi-person"></i>
+                       </div>
+                       {{ w.waiter_name }}
+                    </div>
+                  </td>
+                  <td class="text-center py-3"><span class="badge bg-secondary">{{ w.total_orders }} Transaksi</span></td>
+                  <td class="text-end py-3">{{ formatCurrency(w.total_sales) }}</td>
+                  <td class="text-end pe-4 py-3 fw-bold text-success">{{ formatCurrency(w.total_sales * (getWaiterCommRate(w) / 100)) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="text-center py-5 text-muted">
+            <i class="bi bi-person-badge display-4 d-block mb-3" style="opacity: 0.25;"></i>
+            <h6 class="fw-semibold">Belum Ada Data Waiter</h6>
+            <p class="small mb-0">Belum ada pesanan yang ditangani waiter pada tanggal ini.<br>Pastikan kasir memilih waiter saat mencatat pesanan di layar POS.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getRestoDailyReport } from '@/services/sales/restoApi'
+import { getRestoDailyReport, getWaitersReport, getRestoOrder, getRestoOrders } from '@/services/sales/restoApi'
+import * as salesApi from '@/services/sales/api'
 import { useToast } from '@/composables/useToast'
 import { formatCurrency } from '@/utils/format'
 
 const toast = useToast()
 const loading = ref(true)
 const reportData = ref(null)
+const waitersReport = ref([])
 const showAllBestSellers = ref(false)
+const commissionRate = ref(0)
+
 
 // Init to today's date YYYY-MM-DD
 const filterDate = ref(new Date().toISOString().split('T')[0])
@@ -253,21 +300,47 @@ async function loadReport() {
   if (!filterDate.value) return
   loading.value = true
   try {
-    const { data } = await getRestoDailyReport({ date: filterDate.value }).catch(() => ({ data: null }))
+    const [{ data }, waitersRes, settingsRes] = await Promise.all([
+      getRestoDailyReport({ date: filterDate.value }).catch(() => ({ data: null })),
+      getWaitersReport({ from: filterDate.value, to: filterDate.value }).catch(() => ({ data: [] })),
+      salesApi.getPosSettings().catch(() => ({ data: {} }))
+    ])
     
+    waitersReport.value = waitersRes.data || []
+    commissionRate.value = parseFloat(settingsRes.data?.pos_waiter_commission_pct || 0)
+
     // FETCH CLIENT SIDE ORDERS (since backend report may be removed/failing)
-    const ordersRes = await import('@/services/sales/restoApi').then(m => m.getRestoOrders({ from: filterDate.value, to: filterDate.value }))
-    const orders = (ordersRes.data || []).filter(o => o.status === 'paid')
+    let orders = []
+    try {
+      const ordersRes = await getRestoOrders({ from: filterDate.value, to: filterDate.value })
+      orders = (ordersRes.data || []).filter(o => o.status === 'paid')
+    } catch (e) {
+      console.warn('Failed to fetch orders for report, continuing with empty list:', e.message)
+    }
 
-    let totalSales = 0, totalTrx = orders.length, cash = 0, qris = 0, card = 0
+    let totalSales = 0, totalTrx = orders.length, cash = 0, qris = 0, transfer = 0, debit = 0
     const peakFreq = {};
+    const menuCount = {}; // for best selling items
 
-    orders.forEach(o => {
+    // Fetch item details for each paid order (for best-selling items)
+    let orderDetails = []
+    try {
+      const orderDetailsPromises = orders.map(o =>
+        getRestoOrder(o.uuid).then(r => r.data).catch(() => null)
+      )
+      orderDetails = await Promise.all(orderDetailsPromises)
+    } catch (e) {
+      console.warn('Failed to fetch order details for best-selling:', e.message)
+    }
+
+    orders.forEach((o, i) => {
        const t = parseFloat(o.total || 0)
        totalSales += t
        if (o.payment_method === 'cash') cash += t
        else if (o.payment_method === 'qris') qris += t
-       else card += t
+       else if (o.payment_method === 'transfer') transfer += t
+       else if (o.payment_method === 'debit') debit += t
+       else transfer += t  // fallback: split/other go to transfer
 
        // peak hours (from paid_at)
        const d = new Date(o.paid_at || o.ordered_at)
@@ -275,7 +348,21 @@ async function loadReport() {
        if (!peakFreq[h]) peakFreq[h] = { count: 0, sales: 0 }
        peakFreq[h].count++
        peakFreq[h].sales += t
+
+       // best-selling items from order details
+       const detail = orderDetails[i]
+       if (detail && detail.items) {
+         detail.items.forEach(item => {
+           if (item.status === 'cancelled') return
+           const key = item.item_name || item.name || 'Unknown'
+           if (!menuCount[key]) menuCount[key] = { name: key, qty: 0, revenue: 0 }
+           menuCount[key].qty += parseInt(item.qty) || 0
+           menuCount[key].revenue += (parseFloat(item.price) || 0) * (parseInt(item.qty) || 0)
+         })
+       }
     })
+
+    const bestSelling = Object.values(menuCount).sort((a, b) => b.qty - a.qty).slice(0, 10)
 
     const expectedHours = Object.keys(peakFreq).map(k => ({
          hour: parseInt(k),
@@ -320,18 +407,26 @@ async function loadReport() {
            total_transactions: totalTrx,
            average_transaction: totalTrx > 0 ? totalSales / totalTrx : 0
        },
-       payment_breakdown: { cash, qris, card },
+       payment_breakdown: { cash, qris, transfer, debit },
        peak_hours: expectedHours,
-       best_selling: [], // Note: order details excluded from getRestoOrders to save bandwidth
+       best_selling: bestSelling,
        cash_summary: cashSummary
     }
   } catch (e) {
     toast.error('Gagal menghitung laporan harian secara lokal.')
-    console.error(e)
+    console.error('Report loadReport error:', e, e?.response?.data, e?.stack)
     reportData.value = null
   } finally {
     loading.value = false
   }
+}
+
+function getWaiterCommRate(w) {
+  // Use waiter's own commission_pct override if available, otherwise fall back to global rate
+  if (w.waiter_commission_pct != null && w.waiter_commission_pct !== '') {
+    return parseFloat(w.waiter_commission_pct)
+  }
+  return commissionRate.value
 }
 </script>
 

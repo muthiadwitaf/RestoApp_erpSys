@@ -43,7 +43,7 @@ router.use(authenticateToken);
         await query(`
             CREATE INDEX IF NOT EXISTS idx_pos_sessions_company_status
               ON pos_sessions (company_id, status, closed_at)
-        `).catch(() => {});
+        `);
     } catch (e) {
         console.error('pos_sessions bootstrap error:', e.message);
     }
@@ -123,7 +123,7 @@ router.post('/open', requirePermission('pos:view'), asyncHandler(async (req, res
             `INSERT INTO audit_trail (action, module, description, user_id, user_name)
              VALUES ('OPEN','pos', $1, $2, $3)`,
             [JSON.stringify({ shift_id: session.uuid, opening_cash, note: notes }), cashierId, cashierName]
-        ).catch(() => {});
+        );
 
         res.status(201).json(session);
     } catch (e) {
@@ -176,7 +176,7 @@ router.post('/close', requirePermission('pos:view'), asyncHandler(async (req, re
             shift_id: session.uuid,
             closing_cash: actual_cash || session.total_cash
         }), cashierId, cashierName]
-    ).catch(() => {});
+    );
 
     res.json({ session: updated.rows[0] });
 }));

@@ -251,7 +251,7 @@ router.post('/', requirePermission('accounting:create'), asyncHandler(async (req
             `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
              VALUES ('create','accounting',$1,$2,$3,$4)`,
             [`Buat reimburse: ${number} - ${description}`, req.user.id, req.user.name, branchIntId]
-        ).catch(() => { });
+        );
 
         res.status(201).json({ uuid: reimb.uuid, number: reimb.number });
     } catch (err) {
@@ -307,7 +307,7 @@ router.put('/:uuid', requirePermission('accounting:create'), validateUUID(), asy
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('update','accounting',$1,$2,$3,$4)`,
         [`Edit reimburse: ${req.params.uuid}`, req.user.id, req.user.name, req.user.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'Reimburse berhasil diupdate' });
 }));
@@ -413,7 +413,7 @@ router.put('/:uuid/post', requirePermission('accounting:approve'), validateUUID(
             `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
              VALUES ('approve','accounting',$1,$2,$3,$4)`,
             [`Post reimburse: ${reimb.number} - Jurnal: ${jeNumber}`, req.user.id, req.user.name, reimb.branch_id]
-        ).catch(() => { });
+        );
 
         res.json({ message: `Reimburse ${reimb.number} berhasil diposting. Jurnal: ${jeNumber}` });
     } catch (err) {
@@ -456,7 +456,7 @@ router.delete('/:uuid', requirePermission('accounting:create'), validateUUID(), 
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('delete','accounting',$1,$2,$3,$4)`,
         [`Hapus reimburse: ${reimb.number} - ${reimb.description}`, req.user.id, req.user.name, reimb.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: `Reimburse ${reimb.number} berhasil dihapus` });
 }));

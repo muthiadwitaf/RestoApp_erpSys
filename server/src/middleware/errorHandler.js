@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const logger = require('../utils/logger');
 
 // Log error to database
 async function logErrorToDb(err, req) {
@@ -18,7 +19,7 @@ async function logErrorToDb(err, req) {
             ]
         );
     } catch (logErr) {
-        console.error('Failed to log error to DB:', logErr.message);
+        logger.error(`Failed to log error to DB: ${logErr.message}`);
     }
 }
 
@@ -27,8 +28,8 @@ function errorHandler(err, req, res, next) {
     const status = err.status || 500;
     const isDev = process.env.NODE_ENV !== 'production';
 
-    console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${status}: ${err.message}`);
-    if (status >= 500) console.error(err.stack);
+    logger.error({ status, method: req.method, url: req.originalUrl, err: err.message }, err.message);
+    if (status >= 500 && isDev) logger.error(err.stack);
 
     // Log to database (async, don't wait)
     logErrorToDb({ ...err, status }, req);

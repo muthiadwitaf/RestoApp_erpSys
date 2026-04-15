@@ -204,7 +204,7 @@ router.post('/bulk', requirePermission('inventory:create', 'inventory:manage'), 
         [whId, rackCode, fRow, fCol, total_rows, total_cols]);
 
     await query(`INSERT INTO audit_trail (action,module,description,user_id,user_name) VALUES ('create','inventory',$1,$2,$3)`,
-        [`Buat rak ${rackCode} (${total_rows}×${total_cols}) di gudang`, req.user.id, req.user.name]).catch(() => { });
+        [`Buat rak ${rackCode} (${total_rows}×${total_cols}) di gudang`, req.user.id, req.user.name]);
 
     res.status(201).json({ created: inserted.rows.length, bins: inserted.rows });
 }));

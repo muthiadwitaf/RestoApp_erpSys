@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { query } = require('../../config/db');
+const { query, getClient } = require('../../config/db');
 const { authenticateToken, requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
@@ -115,23 +115,34 @@ router.post('/', requirePermission('purchasing:create'), asyncHandler(async (req
     const afterDisc = lineTotal * (1 - extraDiscPct / 100);
     const taxAmount = Math.round(afterDisc * taxRate / 100);
 
-    const result = await query(
-        `INSERT INTO purchase_orders (number, date, supplier_id, branch_id, warehouse_id, currency, notes, created_by,
-         payment_method, payment_term_days, extra_discount, tax_rate, tax_amount)
-     VALUES ($1,CURRENT_DATE,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id, uuid, number`,
-        [number, resolvedSupplierId, resolvedBranchId, resolvedWhId || null, currency || 'IDR', notes, req.user.name,
-            payment_method || 'transfer', payment_term_days || 30, extraDiscPct, taxRate, taxAmount]
-    );
-    for (const l of (lines || [])) {
-        let resolvedItemId = l.item_id;
-        if (typeof l.item_id === 'string' && l.item_id.includes('-')) {
-            const ir = await query(`SELECT id FROM items WHERE uuid = $1`, [l.item_id]);
-            resolvedItemId = ir.rows[0]?.id;
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
+        
+        const result = await client.query(
+            `INSERT INTO purchase_orders (number, date, supplier_id, branch_id, warehouse_id, currency, notes, created_by,
+             payment_method, payment_term_days, extra_discount, tax_rate, tax_amount)
+         VALUES ($1,CURRENT_DATE,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING id, uuid, number`,
+            [number, resolvedSupplierId, resolvedBranchId, resolvedWhId || null, currency || 'IDR', notes, req.user.name,
+                payment_method || 'transfer', payment_term_days || 30, extraDiscPct, taxRate, taxAmount]
+        );
+        for (const l of (lines || [])) {
+            let resolvedItemId = l.item_id;
+            if (typeof l.item_id === 'string' && l.item_id.includes('-')) {
+                const ir = await query(`SELECT id FROM items WHERE uuid = $1`, [l.item_id]);
+                resolvedItemId = ir.rows[0]?.id;
+            }
+            await client.query(`INSERT INTO purchase_order_lines (po_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`, [result.rows[0].id, resolvedItemId, l.qty, l.uom, l.price, l.discount || 0]);
         }
-        await query(`INSERT INTO purchase_order_lines (po_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`, [result.rows[0].id, resolvedItemId, l.qty, l.uom, l.price, l.discount || 0]);
+        await client.query('COMMIT');
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','purchasing',$1,$2,$3,$4)`, [`Membuat PO ${number}`, req.user.id, req.user.name, resolvedBranchId]).catch(() => {});
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','purchasing',$1,$2,$3,$4)`, [`Membuat PO ${number}`, req.user.id, req.user.name, resolvedBranchId]);
-    res.status(201).json(result.rows[0]);
 }));
 
 // Edit draft PO
@@ -159,28 +170,38 @@ router.put('/:uuid', requirePermission('purchasing:edit'), validateUUID(), async
         }
     }
 
-    await query(`UPDATE purchase_orders SET
-       supplier_id=COALESCE($1,supplier_id), warehouse_id=COALESCE($2,warehouse_id),
-       currency=COALESCE($3,currency), notes=COALESCE($4,notes),
-       payment_method=COALESCE($5,payment_method), payment_term_days=COALESCE($6,payment_term_days),
-       extra_discount=COALESCE($7,extra_discount),
-       tax_rate=COALESCE($8::numeric,tax_rate),
-       updated_at=NOW()
-     WHERE id=$9`,
-        [resolvedSupplierId, resolvedWhId, currency, notes,
-            payment_method, payment_term_days != null ? payment_term_days : null,
-            extra_discount != null ? extra_discount : null,
-            taxRate, poId]);
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
+        await client.query(`UPDATE purchase_orders SET
+           supplier_id=COALESCE($1,supplier_id), warehouse_id=COALESCE($2,warehouse_id),
+           currency=COALESCE($3,currency), notes=COALESCE($4,notes),
+           payment_method=COALESCE($5,payment_method), payment_term_days=COALESCE($6,payment_term_days),
+           extra_discount=COALESCE($7,extra_discount),
+           tax_rate=COALESCE($8::numeric,tax_rate),
+           updated_at=NOW()
+         WHERE id=$9`,
+            [resolvedSupplierId, resolvedWhId, currency, notes,
+                payment_method, payment_term_days != null ? payment_term_days : null,
+                extra_discount != null ? extra_discount : null,
+                taxRate, poId]);
 
-    if (lines !== undefined) {
-        await query(`DELETE FROM purchase_order_lines WHERE po_id = $1`, [poId]);
-        for (const l of (lines || [])) {
-            const rItem = await resolveUUID(l.item_id, 'items', query);
-            await query(`INSERT INTO purchase_order_lines (po_id, item_id, qty, price, discount, uom) VALUES ($1,$2,$3,$4,$5,$6)`,
-                [poId, rItem, l.qty, l.price, l.discount || 0, l.uom || 'Pcs']);
+        if (lines !== undefined) {
+            await client.query(`DELETE FROM purchase_order_lines WHERE po_id = $1`, [poId]);
+            for (const l of (lines || [])) {
+                const rItem = await resolveUUID(l.item_id, 'items', query);
+                await client.query(`INSERT INTO purchase_order_lines (po_id, item_id, qty, price, discount, uom) VALUES ($1,$2,$3,$4,$5,$6)`,
+                    [poId, rItem, l.qty, l.price, l.discount || 0, l.uom || 'Pcs']);
+            }
         }
+        await client.query('COMMIT');
+        res.json({ message: 'PO berhasil diupdate' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-    res.json({ message: 'PO berhasil diupdate' });
 }));
 
 router.put('/:uuid/submit', requirePermission('purchasing:edit'), validateUUID(), asyncHandler(async (req, res) => {

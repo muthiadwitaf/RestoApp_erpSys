@@ -19,7 +19,7 @@ export const useThemeStore = defineStore('theme', () => {
 
     watch(isDark, (val) => {
         localStorage.setItem('erp_theme', val ? 'dark' : 'light')
-        document.documentElement.setAttribute('data-theme', val ? 'dark' : 'light')
+        document.documentElement.setAttribute('data-bs-theme', val ? 'dark' : 'light')
     }, { immediate: true })
 
     return { isDark, toggle, setFromUser }

@@ -233,7 +233,7 @@
             <i class="bi bi-lock"></i> Tutup
           </button>
         </div>
-        <span class="badge bg-primary ms-2" v-if="activeOrders.length">{{ activeOrders.length }} pesanan</span>
+        <span class="badge bg-primary ms-2" v-if="activeOrders.length">{{ activeOrders.length }} Pesanan Aktif</span>
       </div>
       <div class="rp-header-right">
         <router-link to="/resto/tables" class="btn btn-sm btn-outline-secondary">
@@ -284,20 +284,39 @@
       <!-- ═══ Center: Order Items Panel ═══ -->
       <div class="rp-order-panel" v-if="selectedTable">
         <div class="rp-panel-header">
-          <div>
-            <h6 class="mb-0"><i class="bi bi-receipt-cutoff"></i>
-              Meja {{ selectedTable.number }}
-              <small v-if="selectedTable.label" class="text-muted">· {{ selectedTable.label }}</small>
-            </h6>
-            <div v-if="currentOrder" class="mt-1">
-              <span class="badge" :class="orderStatusBadge(currentOrder.status)">{{ orderStatusLabel(currentOrder.status) }}</span>
-              <small class="text-muted ms-2">{{ currentOrder.order_number }}</small>
+            <div>
+              <h6 class="mb-0"><i class="bi bi-receipt-cutoff"></i>
+                Meja {{ selectedTable.number }}
+                <small v-if="selectedTable.label" class="text-muted">· {{ selectedTable.label }}</small>
+              </h6>
+              <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                <span class="badge" v-if="currentOrder" :class="orderStatusBadge(currentOrder.status)">{{ orderStatusLabel(currentOrder.status) }}</span>
+                <small v-if="currentOrder" class="text-muted">{{ currentOrder.order_number }}</small>
+                
+                <div class="input-group input-group-sm rp-waiter-select" style="max-width: 250px;">
+                  <span class="input-group-text bg-light"><i class="bi bi-person-badge"></i></span>
+                  <select class="form-select text-secondary" v-model="selectedWaiter" @change="handleWaiterChange">
+                    <option :value="null">-- Tanpa Waiter --</option>
+                    <option v-for="w in waiters" :key="w.uuid" :value="w.uuid">{{ w.name }}</option>
+                  </select>
+                </div>
+              </div>
             </div>
-          </div>
           <div class="d-flex gap-2">
+            <!-- Simpan: for NEW orders (no currentOrder yet, but items in cart) -->
+            <button v-if="!currentOrder && visibleItems.length > 0"
+                    class="btn btn-sm btn-primary" @click="sendToKitchen" id="btn-save-new-order">
+              <i class="bi bi-send"></i> Kirim ke Dapur
+            </button>
+            <!-- Simpan: for EXISTING orders with new/changed items -->
             <button v-if="currentOrder && !['paid','cancelled'].includes(currentOrder.status)"
                     class="btn btn-sm btn-primary" @click="sendToKitchen" :disabled="newItems.length === 0">
               <i class="bi bi-save"></i> Simpan
+            </button>
+            <!-- Pindah Meja: only for existing active orders -->
+            <button v-if="currentOrder && !['paid','cancelled'].includes(currentOrder.status)"
+                    class="btn btn-sm btn-outline-info" @click="showMoveTableModal = true" title="Pindah Meja" id="btn-move-table">
+              <i class="bi bi-arrow-left-right"></i>
             </button>
             <button v-if="visibleItems.length > 0 && (!currentOrder || !['paid','cancelled'].includes(currentOrder.status))"
                     class="btn btn-sm btn-success" @click="showCheckout = true" id="btn-checkout-pos">
@@ -315,9 +334,11 @@
           <div v-for="(item, idx) in visibleItems" :key="item.uuid || idx" class="rp-order-item" :class="{'opacity-50': item.status !== 'pending' && !item._changed}">
             <!-- Row 1: Name and Delete button -->
             <div class="rp-oi-row1">
-              <div class="rp-oi-name-col">
+              <div class="rp-oi-name-col w-100 pe-2">
                 <span class="rp-oi-name">{{ item.item_name || item.name }}</span>
-                <span class="rp-oi-note" v-if="item.notes">📝 {{ item.notes }}</span>
+                <!-- Notes Input -->
+                <input v-if="canEditItem(item)" type="text" class="form-control form-control-sm mt-1" :value="item.notes" @change="changeNote(item, $event.target.value)" placeholder="Catatan khusus...">
+                <span class="rp-oi-note text-muted small d-block mt-1" v-else-if="item.notes"><i class="bi bi-chat-text-fill text-secondary me-1"></i>{{ item.notes }}</span>
               </div>
               <button v-if="canEditItem(item)" class="btn btn-sm btn-link text-danger p-0 rp-btn-del" @click="removeOrderItem(item)" title="Hapus">
                 <i class="bi bi-trash3"></i>
@@ -343,25 +364,30 @@
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div v-if="visibleItems.length === 0" class="rp-order-empty">
-          <i class="bi bi-bag-x" style="font-size:2.5rem;opacity:0.25"></i>
-          <p class="text-muted">{{ currentOrder ? 'Belum ada item.' : 'Meja kosong. Pilih menu untuk mulai.' }}</p>
+        <!-- Empty Cart -->
+        <div v-if="visibleItems.length === 0" class="rp-cart-empty text-center py-5">
+          <i class="bi bi-cart-x text-muted mb-3" style="font-size:3rem"></i>
+          <p class="text-muted">{{ t('cart_empty') }}</p>
         </div>
 
         <!-- Summary & Actions -->
         <div class="rp-order-footer" v-if="visibleItems.length > 0 || currentOrder">
           <div class="rp-summary" v-if="visibleItems.length > 0">
-            <div class="rp-sum-row"><span>Subtotal</span><span>Rp {{ formatMoney(subtotal) }}</span></div>
-            <div class="rp-sum-row total"><span>Total</span><span>Rp {{ formatMoney(subtotal) }}</span></div>
+            <div class="rp-sum-row"><span>{{ t('subtotal') }}</span><span>Rp {{ formatMoney(visibleSubtotal) }}</span></div>
+            <div class="rp-sum-row total">
+              <span>{{ t('total_payment') }}</span>
+              <span>Rp {{ formatMoney(checkoutTotal) }}</span>
+            </div>
           </div>
-          <div class="rp-bottom-actions">
-            <button v-if="newItems.length > 0" class="btn btn-warning btn-sm flex-fill" @click="sendToKitchen">
-              <i class="bi bi-fire"></i> Kirim ke Dapur ({{ newItems.length }} item)
+          <div class="rp-actions mt-3 d-flex gap-2">
+            <button class="btn btn-primary flex-grow-1 fw-bold btn-lg-touch" @click="sendToKitchen" v-if="visibleItems.length > 0 && !currentOrder">
+              <i class="bi bi-send"></i> Kirim ke Dapur
             </button>
-            <button v-if="visibleItems.length > 0 && (!currentOrder || !['paid','cancelled'].includes(currentOrder.status))"
-                    class="btn btn-success btn-sm flex-fill" @click="showCheckout = true">
-              <i class="bi bi-cash-coin"></i> Bayar
+            <button class="btn btn-warning flex-grow-1 fw-bold text-white btn-lg-touch" @click="showCheckout = true" v-if="visibleItems.length > 0 && (!currentOrder || currentOrder.status !== 'paid')">
+              <i class="bi bi-send-check"></i> {{ t('pay') }}
+            </button>
+            <button class="btn btn-success flex-grow-1 fw-bold btn-lg-touch" @click="printReceipt(currentOrder)" v-if="currentOrder && currentOrder.status === 'paid'">
+              <i class="bi bi-printer"></i> {{ t('print_receipt') }}
             </button>
           </div>
         </div>
@@ -406,6 +432,13 @@
               <span class="rp-product-price">Rp {{ formatMoney(product.price) }}</span>
             </div>
             <div v-if="getCartQty(product)" class="rp-product-badge">{{ getCartQty(product) }}</div>
+            <button v-if="canManageMenu" class="btn btn-sm"
+                    :class="product.is_available ? 'btn-warning' : 'btn-success'"
+                    style="position: absolute; top: 10px; left: 10px; z-index: 5; border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                    @click.stop="toggleProductAvail(product)"
+                    :title="product.is_available ? 'Tandai Habis' : 'Tandai Tersedia'">
+              <i class="bi" :class="product.is_available ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+            </button>
           </div>
           <div v-if="filteredProducts.length === 0 && !loadingProducts" class="rp-empty-products">
             <i class="bi bi-search" style="font-size:2rem;opacity:0.2"></i>
@@ -427,9 +460,25 @@
         </div>
         <div class="rp-modal-body p-4 bg-white text-dark">
           <!-- TOP BLUE TOTAL -->
-          <div class="d-flex justify-content-between align-items-center bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded p-3 mb-4">
-            <span class="fw-semibold">Total Pembayaran</span>
+          <div class="d-flex justify-content-between align-items-center bg-primary bg-opacity-10 text-primary border border-primary-subtle rounded p-3 mb-3">
+            <span class="fw-semibold">Total Sisa Pembayaran</span>
             <h4 class="mb-0 fw-bold">Rp {{ formatMoney(checkoutTotal) }}</h4>
+          </div>
+
+          <!-- SPLIT BILL TOGGLE -->
+          <div class="mb-3">
+             <div class="btn-group w-100 shadow-sm border rounded">
+               <button class="btn" :class="splitMode === 'full' ? 'btn-primary fw-bold' : 'btn-outline-primary bg-white text-secondary'" @click="splitMode = 'full'">Bayar Penuh</button>
+               <button class="btn" :class="splitMode === 'split' ? 'btn-primary fw-bold' : 'btn-outline-primary bg-white text-secondary'" @click="splitMode = 'split'">Bayar Sebagian / Split</button>
+             </div>
+          </div>
+          
+          <div v-if="splitMode === 'split'" class="mb-4">
+             <label class="form-label fw-bold text-dark small"><i class="bi bi-pie-chart-fill text-primary me-1"></i> Jumlah Dibayar Kali Ini</label>
+             <div class="input-group">
+                <span class="input-group-text bg-white text-dark fw-bold">Rp</span>
+                <input v-model.number="partialAmount" type="number" class="form-control fw-bold text-primary" placeholder="0" />
+             </div>
           </div>
 
           <!-- GRID OF BUTTONS -->
@@ -460,8 +509,8 @@
             </div>
             <div class="p-3 bg-light rounded-3 text-center border">
               <div class="small text-muted mb-1">Kembalian</div>
-              <h3 class="mb-0 fw-bold" :class="cashPaid >= checkoutTotal ? 'text-success' : 'text-danger'">
-                Rp {{ formatMoney(cashPaid - checkoutTotal) }}
+              <h3 class="mb-0 fw-bold" :class="cashPaid >= (splitMode === 'split' ? partialAmount : checkoutTotal) ? 'text-success' : 'text-danger'">
+                Rp {{ formatMoney(cashPaid - (splitMode === 'split' ? partialAmount : checkoutTotal)) }}
               </h3>
             </div>
           </div>
@@ -477,12 +526,12 @@
               </div>
             </div>
             <div>
-              <span class="badge bg-danger fs-6 px-3 py-2 mb-3 shadow-sm rounded-2">Rp {{ formatMoney(checkoutTotal) }}</span>
+              <span class="badge bg-danger fs-6 px-3 py-2 mb-3 shadow-sm rounded-2">Rp {{ formatMoney(splitMode === 'split' ? partialAmount : checkoutTotal) }}</span>
             </div>
             <p class="small text-muted mb-4 px-3">Scan QR Code di atas menggunakan aplikasi mobile banking atau e-wallet Anda.</p>
             <div class="alert alert-warning d-flex align-items-center mb-0 small text-start border-warning rounded-2 shadow-sm" role="alert" style="background-color: #fff3cd;">
               <i class="bi bi-info-circle me-2 text-warning fs-5"></i>
-              <div class="text-dark">Setelah pelanggan berhasil scan, klik <strong>Konfirmasi Pembayaran</strong> di bawah.</div>
+              <div class="text-dark">Setelah pelanggan berhasil scan, klik <strong>Konfirmasi Pembayaran</strong>.</div>
             </div>
           </div>
 
@@ -543,14 +592,14 @@
             </div>
             <div class="alert alert-warning d-flex align-items-center mb-0 small border-warning rounded-2 shadow-sm" role="alert" style="background-color: #fff3cd;">
               <i class="bi bi-info-circle me-2 text-warning fs-5"></i>
-              <div class="text-dark">Setelah mesin EDC memproses pembayaran, klik <strong>Konfirmasi Pembayaran</strong>.</div>
+              <div class="text-dark">Setelah mesin EDC memproses pembayaran, klik <strong>Konfirmasi Pembayaran</strong> di bawah.</div>
             </div>
           </div>
-          
+
           <div v-else class="mb-3 mt-4 p-4 border rounded-3 text-center bg-white shadow-sm">
              <h6 class="text-secondary fw-bold mb-3">Instruksi Pembayaran {{ payMethod.toUpperCase() }}</h6>
              <p class="mb-3 text-dark small">Pastikan pelanggan telah mentransfer sejumlah:</p>
-             <h3 class="text-primary fw-bold mb-0">Rp {{ formatMoney(checkoutTotal) }}</h3>
+             <h3 class="text-primary fw-bold mb-0">Rp {{ formatMoney(splitMode === 'split' ? partialAmount : checkoutTotal) }}</h3>
           </div>
 
         </div>
@@ -559,8 +608,56 @@
             <i class="bi bi-arrow-left me-1"></i> Kembali
           </button>
           <button class="btn btn-success px-4 py-2 fw-bold" @click="processCheckout"
-                  :disabled="payMethod === 'cash' && cashPaid < checkoutTotal" id="btn-process-checkout" style="background-color: #198754;">
-            <i class="bi bi-check-circle me-1"></i> Konfirmasi Pembayaran
+                  :disabled="payMethod === 'cash' && cashPaid < (splitMode === 'split' ? partialAmount : checkoutTotal)" id="btn-process-checkout" style="background-color: #198754;">
+            <i class="bi bi-check-circle me-2"></i> Konfirmasi Pembayaran
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Move Table Modal ═══ -->
+    <div v-if="showMoveTableModal" class="rp-modal-overlay" @click.self="showMoveTableModal = false" style="z-index:1060">
+      <div class="rp-checkout-modal" style="max-width:420px">
+        <div class="rp-modal-header" style="background:linear-gradient(135deg,#0dcaf0,#0d6efd);color:#fff">
+          <h5 class="mb-0 fw-semibold"><i class="bi bi-arrow-left-right me-2"></i>Pindah Meja</h5>
+          <button class="btn-close btn-close-white" @click="showMoveTableModal = false"></button>
+        </div>
+        <div class="rp-modal-body" style="max-height:50vh;overflow-y:auto">
+          <p class="text-muted small mb-3">
+            Pindahkan pesanan <strong>{{ currentOrder?.order_number }}</strong> dari
+            <span class="badge bg-danger">Meja {{ selectedTable?.number }}</span> ke meja lain:
+          </p>
+          <div v-if="availableTablesForMove.length === 0" class="text-center py-4 text-muted">
+            <i class="bi bi-grid-3x3-gap" style="font-size:2rem;opacity:0.3"></i>
+            <p class="mt-2 small">Tidak ada meja kosong tersedia</p>
+          </div>
+          <div class="list-group">
+            <button v-for="tbl in availableTablesForMove" :key="tbl.uuid"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3"
+                    :class="{ 'active': moveTargetTable === tbl.uuid }"
+                    @click="moveTargetTable = tbl.uuid">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rp-table-icon status-available" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.85rem">
+                  <i class="bi bi-grid-3x3-gap-fill"></i>
+                </div>
+                <div>
+                  <span class="fw-bold">Meja {{ tbl.number }}</span>
+                  <small class="text-muted d-block" v-if="tbl.label">{{ tbl.label }}</small>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-light text-dark"><i class="bi bi-people-fill me-1"></i>{{ tbl.capacity }}</span>
+                <i v-if="moveTargetTable === tbl.uuid" class="bi bi-check-circle-fill text-white fs-5"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+        <div class="rp-modal-footer">
+          <button class="btn btn-outline-secondary" @click="showMoveTableModal = false">Batal</button>
+          <button class="btn btn-primary fw-bold" @click="doMoveTable" :disabled="!moveTargetTable || movingTable">
+            <span v-if="movingTable" class="spinner-border spinner-border-sm me-1"></span>
+            <i v-else class="bi bi-arrow-left-right me-1"></i>
+            {{ movingTable ? 'Memindahkan...' : 'Pindahkan' }}
           </button>
         </div>
       </div>
@@ -636,20 +733,29 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useBranchStore } from '@/stores/branch'
 import { useToast } from '@/composables/useToast'
-import { useCart } from '@/composables/useCart'
+import { useLang } from '@/composables/useLang'
+import { useErrorHandler } from '@/composables/useErrorHandler'
+import { useCartStore } from '@/stores/cart'
 import * as salesApi from '@/services/sales/api'
+import { useAuthStore } from '@/stores/auth'
 import {
   getRestoRooms, getRestoTables, getRestoOrders, getRestoOrder,
   getRestoMenu, createRestoOrder, updateRestoOrderItems,
-  updateRestoOrderStatus, checkoutRestoOrder
+  updateRestoOrderStatus, checkoutRestoOrder, moveRestoOrderTable,
+  updateRestoMenuItem, addRestoOrderPayment,
+  getRestoWaiters, updateRestoOrderWaiter
 } from '@/services/sales/restoApi'
 import { useShiftStore } from '@/stores/shift'
 
+const { t } = useLang()
 const shiftStore = useShiftStore()
 const router = useRouter()
 const branchStore = useBranchStore()
 const route = useRoute()
 const toast = useToast()
+const authStore = useAuthStore()
+
+const canManageMenu = computed(() => authStore.hasPermission('pos:create'))
 
 const posSettings = ref({
   pos_require_opening_cash: true,
@@ -658,7 +764,10 @@ const posSettings = ref({
   pos_bank_name: '',
   pos_bank_holder: '',
   pos_bank_number: '',
-  pos_qris_url: ''
+  pos_qris_url: '',
+  pos_service_pct: 0,
+  pos_tax_pct: 0,
+  pos_waiter_commission_pct: 0
 })
 
 // Session states
@@ -693,20 +802,55 @@ const tables = ref([])
 const activeOrders = ref([])
 const products = ref([])
 const categories = ref([])
+const waiters = ref([])
+const selectedWaiter = ref(null)
+
 const selectedRoom = ref(null)
 const selectedTable = ref(null)
 const currentOrder = ref(null)
 const searchQuery = ref('')
 const selectedCategory = ref(null)
-// Cart composable
-const { addItem, removeItem: cartRemoveItem, updateQty, replaceAll: cartReplaceAll, clear: cartClear, items: cartItems, activeItems, subtotal, tax, total } = useCart()
+// Cart store
+const cartStore = useCartStore()
+const addItem = cartStore.addItem
+const cartRemoveItem = cartStore.removeItem
+const updateQty = cartStore.updateQty
+const updateNotes = cartStore.updateNotes
+const cartReplaceAll = cartStore.replaceAll
+const cartClear = cartStore.clear
+const cartItems = computed(() => cartStore.items)
+const activeItems = computed(() => cartStore.activeItems)
 
 // Checkout
 const showCheckout = ref(false)
 const showReceiptModal = ref(false)
 const discountPct = ref(0)
 const payMethod = ref('cash')
+
+// Split Bill
+const splitMode = ref('full')
+const partialAmount = ref(0)
+const totalPaidSoFar = ref(0)
+
+// Move Table
+const showMoveTableModal = ref(false)
+const moveTargetTable = ref(null)
+const movingTable = ref(false)
+const availableTablesForMove = computed(() => {
+  if (!selectedTable.value) return []
+  return tables.value.filter(t => t.uuid !== selectedTable.value.uuid && t.status === 'available')
+})
 const cashPaid = ref(0)
+
+watch(currentOrder, (newOrder) => {
+  if (newOrder) {
+    totalPaidSoFar.value = parseFloat(newOrder.total_paid || 0)
+    selectedWaiter.value = newOrder.waiter_id || null
+  } else {
+    totalPaidSoFar.value = 0
+    selectedWaiter.value = null
+  }
+})
 
 const ALL_METHODS = [
   { value: 'cash', label: 'Tunai', icon: 'bi bi-cash' },
@@ -720,13 +864,25 @@ const paymentMethods = computed(() => {
   return ALL_METHODS.filter(m => allowed.includes(m.value))
 })
 
+async function handleWaiterChange() {
+  if (currentOrder.value && !['paid', 'cancelled'].includes(currentOrder.value.status)) {
+    try {
+      await updateRestoOrderWaiter(currentOrder.value.uuid, selectedWaiter.value)
+      // refresh order optionally, but local state is fine.
+      currentOrder.value.waiter_id = selectedWaiter.value
+    } catch (e) {
+      toast.error('Gagal mengupdate waiter')
+    }
+  }
+}
+
 const filteredTables = computed(() => {
   if (!selectedRoom.value) return tables.value
   return tables.value.filter(t => t.room_id === selectedRoom.value)
 })
 
 const filteredProducts = computed(() => {
-  let list = products.value.filter(p => p.is_available !== false)
+  let list = posSettings.value.pos_hide_stock && !canManageMenu.value ? products.value.filter(p => p.is_available !== false) : products.value
   if (selectedCategory.value) list = list.filter(p => p.category === selectedCategory.value)
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
@@ -735,11 +891,34 @@ const filteredProducts = computed(() => {
   return list
 })
 
-// Active (non-cancelled) items for display purposes
+// Use visibleItems for accurate total (merges server items + local drafts)
 const visibleItems = activeItems
+const visibleSubtotal = computed(() => {
+    return visibleItems.value.reduce(
+        (sum, i) => sum + (parseFloat(i.price) || 0) * (parseFloat(i.qty) || 0),
+        0
+    )
+})
 
-// subtotal, tax, total are provided by useCart composable
-const checkoutTotal = computed(() => subtotal.value - (subtotal.value * (discountPct.value || 0) / 100))
+const serviceCharge = computed(() => {
+    const s = visibleSubtotal.value
+    return s * (posSettings.value.pos_service_pct || 0) / 100
+})
+
+const taxAmount = computed(() => {
+    const s = visibleSubtotal.value
+    const serv = serviceCharge.value
+    return (s + serv) * (posSettings.value.pos_tax_pct || 0) / 100
+})
+
+const checkoutTotal = computed(() => {
+    const s = visibleSubtotal.value
+    const serv = serviceCharge.value
+    const tax = taxAmount.value
+    const disc = (s * (discountPct.value || 0)) / 100
+    const grandTotal = s + serv + tax - disc
+    return Math.max(0, grandTotal - totalPaidSoFar.value)
+})
 
 const quickCash = computed(() => {
   const t = checkoutTotal.value
@@ -764,14 +943,16 @@ function canEditItem(item) {
 async function loadData(skipOrderReload = false) {
   loading.value = true
   try {
-    const [roomRes, tableRes, orderRes] = await Promise.all([
+    const [roomRes, tableRes, orderRes, waiterRes] = await Promise.all([
       getRestoRooms(),
       getRestoTables(),
-      getRestoOrders({ status: 'new,cooking,ready,served' })
+      getRestoOrders({ status: 'new,cooking,ready,served' }),
+      getRestoWaiters()
     ])
     rooms.value = roomRes.data
     tables.value = tableRes.data
     activeOrders.value = orderRes.data
+    waiters.value = waiterRes.data
 
     // Sync table status from active orders
     const occupiedIds = new Set(activeOrders.value.map(o => o.table_id))
@@ -790,6 +971,7 @@ async function loadData(skipOrderReload = false) {
         selectedTable.value = null
         cartClear()
         currentOrder.value = null
+        selectedWaiter.value = null
       }
     }
   } catch (e) {
@@ -879,6 +1061,12 @@ function changeQty(item, delta) {
   }
 }
 
+function changeNote(item, note) {
+  item.notes = note;
+  item._changed = true;
+  updateNotes(cartKey(item), note);
+}
+
 function removeOrderItem(item) {
   cartRemoveItem(cartKey(item))
 }
@@ -899,6 +1087,7 @@ async function sendToKitchen() {
           price: i.price,
           notes: i.notes || '',
         })),
+        waiter_id: selectedWaiter.value || undefined
       })
       // Fetch full order detail once
       const orderRes = await getRestoOrder(res.data.uuid)
@@ -931,7 +1120,9 @@ async function sendToKitchen() {
     await loadData(true)
     toast.success('Pesanan berhasil disimpan! ✅')
   } catch (e) {
-    alert(e.response?.data?.error || 'Gagal mengirim ke dapur')
+    const errorMessage = e.response?.data?.error || e.message || 'Gagal mengirim ke dapur';
+    alert(`[ERROR] ${errorMessage}`)
+    throw e;
   } finally {
     loading.value = false
   }
@@ -947,35 +1138,105 @@ async function cancelCurrentOrder() {
   } catch (e) { alert(e.response?.data?.error || 'Gagal membatalkan') }
 }
 
+// Toggle menu item availability (stok habis / tersedia)
+async function toggleProductAvail(product) {
+  const newStatus = !product.is_available
+  try {
+    await updateRestoMenuItem(product.uuid, { is_available: newStatus })
+    product.is_available = newStatus
+    toast.success(newStatus ? `${product.name} ditandai TERSEDIA ✅` : `${product.name} ditandai HABIS ⛔`)
+  } catch (e) {
+    toast.error('Gagal mengubah ketersediaan menu')
+    console.error(e)
+  }
+}
+
+async function doMoveTable() {
+  if (!moveTargetTable.value || !currentOrder.value) return
+  movingTable.value = true
+  try {
+    const res = await moveRestoOrderTable(currentOrder.value.uuid, moveTargetTable.value)
+    showMoveTableModal.value = false
+    toast.success(res.data.message || 'Meja berhasil dipindahkan! ✅')
+    
+    // Refresh data and select the new table
+    await loadData(true)
+    const newTable = tables.value.find(t => t.uuid === moveTargetTable.value)
+    if (newTable) {
+      await selectTable(newTable)
+    }
+    moveTargetTable.value = null
+  } catch (e) {
+    toast.error(e.response?.data?.error || 'Gagal memindahkan meja')
+  } finally {
+    movingTable.value = false
+  }
+}
+
 async function processCheckout() {
   loading.value = true
   try {
-    // If there are unsent items, first create/update order
-    if (newItems.value.length > 0) await sendToKitchen()
-    if (!currentOrder.value) { alert('Tidak ada pesanan aktif'); return }
+    // If there are unsent drafts, flush them to the server first.
+    if (newItems.value.length > 0) {
+        try {
+            await sendToKitchen()
+        } catch (flushErr) {
+            loading.value = false
+            toast.error('Gagal mengirim pesanan ke dapur. Checkout dibatalkan.')
+            return
+        }
+    }
     
-    const cPaid = payMethod.value === 'cash' ? cashPaid.value : checkoutTotal.value
-    await checkoutRestoOrder(currentOrder.value.uuid, {
-      payment_method: payMethod.value,
-      cash_paid: cPaid,
-      discount_pct: discountPct.value,
-    })
+    if (!currentOrder.value) { 
+        toast.error('Tidak ada pesanan aktif. Gagal checkout.')
+        return 
+    }  
+    const cPaid = payMethod.value === 'cash' ? cashPaid.value : (splitMode.value === 'split' ? partialAmount.value : checkoutTotal.value)
+    const amountToPlay = splitMode.value === 'split' ? partialAmount.value : checkoutTotal.value
+    
+    let resData = null
+    const finalMethod = payMethod.value
+
+    if (splitMode.value === 'split') {
+        const res = await addRestoOrderPayment(currentOrder.value.uuid, {
+            amount: amountToPlay,
+            method: finalMethod,
+            notes: 'Split Bill'
+        })
+        resData = res.data
+        if (resData.status !== 'paid') {
+           toast.success('Pembayaran sebagian berhasil dicatat! Sisa tagihan masih tersedia.')
+           // Update state order
+           totalPaidSoFar.value = resData.total_paid
+           cashPaid.value = 0
+           partialAmount.value = 0
+           loading.value = false
+           return // do not close checkout, or close it if needed. Let's close modal.
+        }
+    } else {
+        const checkRes = await checkoutRestoOrder(currentOrder.value.uuid, {
+          payment_method: finalMethod,
+          cash_paid: cPaid,
+          discount_pct: discountPct.value,
+        })
+        resData = checkRes.data
+    }
     
     // --- LOKAL: update state Shift Harian ---
     const rawShift = localStorage.getItem('resto_shift_data')
     if (rawShift) {
       const sh = JSON.parse(rawShift)
       sh.transaction_count = (sh.transaction_count || 0) + 1
-      if (payMethod.value === 'cash') {
-        sh.total_sales_cash = (sh.total_sales_cash || 0) + checkoutTotal.value
+      if (finalMethod === 'cash') {
+        sh.total_sales_cash = (sh.total_sales_cash || 0) + amountToPlay
         sh.total_cash_in = (sh.total_cash_in || 0) + cPaid
-        sh.total_cash_out = (sh.total_cash_out || 0) + Math.max(0, cPaid - checkoutTotal.value)
-      } else if (payMethod.value === 'qris') {
-        sh.total_qris = (sh.total_qris || 0) + checkoutTotal.value
-      } else if (payMethod.value === 'transfer') {
-        sh.total_transfer = (sh.total_transfer || 0) + checkoutTotal.value
+        sh.total_cash_out = (sh.total_cash_out || 0) + Math.max(0, cPaid - amountToPlay)
+      } else if (finalMethod === 'qris') {
+        sh.total_qris = (sh.total_qris || 0) + amountToPlay
+      } else if (finalMethod === 'transfer') {
+        sh.total_transfer = (sh.total_transfer || 0) + amountToPlay
       } else {
-        sh.total_debit = (sh.total_debit || 0) + checkoutTotal.value
+        sh.total_debit = (sh.total_debit || 0) + amountToPlay
       }
       localStorage.setItem('resto_shift_data', JSON.stringify(sh))
       activeSession.value = sh
@@ -988,13 +1249,13 @@ async function processCheckout() {
         paid_at: new Date(),
         order_number: currentOrder.value.order_number,
         items: JSON.parse(JSON.stringify(visibleItems.value)),
-        subtotal: subtotal.value,
+        subtotal: visibleSubtotal.value,
         discount_pct: discountPct.value,
-        total: checkoutTotal.value,
-        payment_method: payMethod.value,
+        total: amountToPlay,
+        payment_method: finalMethod,
         debit_bank: posSettings.value.pos_debit_bank || '',
         cash_paid: cPaid,
-        change: Math.max(0, cPaid - checkoutTotal.value)
+        change: Math.max(0, cPaid - amountToPlay)
     }
 
     showCheckout.value = false
@@ -1070,6 +1331,11 @@ onMounted(async () => {
   }
   
   refreshInterval = setInterval(loadData, 30000)
+
+  // Fetch Waiters List once
+  getRestoWaiters().then(res => {
+    waiters.value = res.data || []
+  }).catch(e => console.error('Gagal memuat waiter:', e))
 })
 onUnmounted(() => clearInterval(refreshInterval))
 
@@ -1084,7 +1350,10 @@ async function getPosSettings() {
       pos_bank_holder: data.pos_bank_holder || '',
       pos_bank_number: data.pos_bank_number || '',
       pos_qris_url: data.pos_qris_url || '',
-      pos_debit_bank: data.pos_debit_bank || ''
+      pos_debit_bank: data.pos_debit_bank || '',
+      pos_service_pct: parseFloat(data.pos_service_pct) || 0,
+      pos_tax_pct: parseFloat(data.pos_tax_pct) || 0,
+      pos_waiter_commission_pct: parseFloat(data.pos_waiter_commission_pct) || 0
     }
   } catch (e) {
     console.error('Failed to load pos settings', e)
@@ -1148,14 +1417,15 @@ async function prepareCloseModal() {
       const op = parseFloat(data.opening_cash) || 0
       const ci = parseFloat(data.total_cash_in) || 0
       const co = parseFloat(data.total_cash_out) || 0
-      const sc = parseFloat(data.total_sales_cash) || 0
-      const exp = op + ci - co + sc
+      // total_cash_in already includes cash paid by customers (added during checkout)
+      // so expected = opening + cashIn - cashOut (no need to add total_sales_cash again)
+      const exp = op + ci - co
 
       closingReport.value = {
         cashier_name: data.cashier_name,
         opened_at: data.opened_at,
         opening_cash: op,
-        total_cash_in: ci + sc, // Display sales + IN as total in
+        total_cash_in: ci, // Already includes sales cash — no double-counting
         total_cash_out: co,
         expected_cash: exp,
         total_qris: parseFloat(data.total_qris) || 0,
@@ -1195,7 +1465,9 @@ async function doTutupKasir() {
     localStorage.removeItem('resto_shift_data')
 
     activeSession.value = null
+    shiftStore.currentShift = null
     shiftStore.showCloseModal = false
+    shiftStore.showOpenModal = true
     closingReport.value = {
       ...closingReport.value,
       actual_cash: currentData.actual_cash,
@@ -1244,7 +1516,8 @@ async function doPenyesuaianKas() {
 <style scoped>
 .resto-pos {
   display: flex; flex-direction: column; height: calc(100vh - 60px);
-  position: relative; overflow: hidden; font-family: 'Inter', 'Segoe UI', sans-serif;
+  position: relative; overflow: hidden; font-family: 'Inter', -apple-system, sans-serif;
+  background-color: var(--bs-secondary-bg);
 }
 
 .rp-header {
@@ -1257,7 +1530,7 @@ async function doPenyesuaianKas() {
 .rp-title { margin: 0; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .rp-title i { color: var(--bs-primary); }
 
-.rp-body { display: flex; flex: 1; overflow: hidden; }
+.rp-body { display: flex; flex: 1; overflow: hidden; background: var(--bs-tertiary-bg); }
 
 /* ═══ Table List ═══ */
 .rp-table-list {
@@ -1288,7 +1561,7 @@ async function doPenyesuaianKas() {
 .rp-table-icon {
   width: 32px; height: 32px; border-radius: 6px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 0.9rem; flex-shrink: 0;
+  font-size: 0.9rem; flex-shrink: 0; color: #111;
 }
 .rp-table-icon.status-available { background: #dcfce7; color: #16a34a; }
 .rp-table-icon.status-occupied { background: #fecaca; color: #dc2626; }
@@ -1296,27 +1569,27 @@ async function doPenyesuaianKas() {
 .rp-table-icon.status-cleaning { background: #e5e7eb; color: #6b7280; }
 
 .rp-table-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.rp-table-num { font-weight: 700; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-table-num { font-weight: 700; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--bs-heading-color); }
 .rp-table-label { font-size: 0.68rem; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rp-table-cap { font-size: 0.68rem; color: var(--bs-secondary-color); flex-shrink: 0; }
 
 /* ═══ Order Panel ═══ */
 .rp-order-panel {
-  width: 300px; min-width: 280px; display: flex; flex-direction: column;
-  background: var(--bs-body-bg, #fff); border-right: 1px solid var(--bs-border-color, #dee2e6);
+  width: 350px; min-width: 300px; display: flex; flex-direction: column;
+  background: var(--bs-body-bg, #fff); border-left: 1px solid var(--bs-border-color, #dee2e6);
 }
 .rp-panel-header {
   display: flex; justify-content: space-between; align-items: flex-start;
   padding: 10px 14px; border-bottom: 1px solid var(--bs-border-color, #dee2e6); flex-shrink: 0; gap: 8px;
 }
-.rp-panel-header h6 { margin: 0; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 5px; }
+.rp-panel-header h6 { margin: 0; font-weight: 700; font-size: 0.88rem; display: flex; align-items: center; gap: 5px; color: var(--bs-heading-color); }
 .rp-panel-header h6 i { color: var(--bs-primary); }
 
 .rp-order-items { flex: 1; overflow-y: auto; padding: 8px 10px; }
 .rp-order-item {
   display: flex; flex-direction: column; gap: 8px;
   padding: 10px 12px; border-radius: 8px; border: 1px solid var(--bs-border-color, #dee2e6);
-  margin-bottom: 6px; background: var(--bs-tertiary-bg, #f8f9fa);
+  margin-bottom: 6px; background: var(--bs-body-bg, #f8f9fa);
 }
 .rp-oi-row1 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .rp-oi-name-col { flex: 1; display: flex; flex-direction: column; }
@@ -1337,7 +1610,7 @@ async function doPenyesuaianKas() {
 .rp-oi-price { font-weight: 700; font-size: 0.85rem; color: var(--bs-success, #198754); }
 
 
-.rp-order-empty {
+.rp-cart-empty {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   color: var(--bs-secondary-color, #6c757d); gap: 6px; padding: 20px; text-align: center;
@@ -1345,12 +1618,13 @@ async function doPenyesuaianKas() {
 
 .rp-order-footer {
   border-top: 1px solid var(--bs-border-color, #dee2e6);
-  background: var(--bs-body-bg, #fff); flex-shrink: 0;
+  background: var(--bs-body-bg, #fff); flex-shrink: 0; box-shadow: 0 -4px 12px rgba(0,0,0,0.03); 
 }
-.rp-summary { padding: 10px 14px; }
-.rp-sum-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.85rem; }
-.rp-sum-row.total { font-weight: 800; font-size: 1rem; color: var(--bs-success); border-top: 1px solid var(--bs-border-color); padding-top: 6px; margin-top: 3px; }
-.rp-bottom-actions { padding: 8px 10px; display: flex; gap: 6px; }
+.rp-summary { padding: 10px 14px; margin-bottom: 8px; }
+.rp-sum-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.85rem; color: var(--bs-secondary-color); }
+.rp-sum-row.total { font-weight: 800; font-size: 1.1rem; color: var(--bs-heading-color); border-top: 1px dashed var(--bs-border-color); padding-top: 6px; margin-top: 3px; }
+.rp-actions { padding: 8px 10px; display: flex; gap: 6px; }
+
 
 .rp-no-selection {
   flex: 1; display: flex; flex-direction: column;
@@ -1395,7 +1669,7 @@ async function doPenyesuaianKas() {
   transform: translateY(-3px);
 }
 .rp-product-card:active { transform: scale(0.97); }
-.rp-product-card.unavailable { opacity: 0.45; pointer-events: none; filter: grayscale(0.5); }
+.rp-product-card.unavailable { opacity: 0.45; filter: grayscale(0.5); position: relative; }
 .rp-product-img {
   height: 130px; background: linear-gradient(135deg, #E0F7F5, #B2DFDB);
   display: flex; align-items: center; justify-content: center;

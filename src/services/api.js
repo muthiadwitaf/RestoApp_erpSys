@@ -6,8 +6,16 @@ const api = axios.create({
     headers: { 'Content-Type': 'application/json' }
 })
 
-// Request interceptor — attach JWT token
+// Memory leak and Ghost Spinner protection.
+export const activeRequests = new Map()
+
+// Request interceptor — attach JWT token & cancellation tokens
 api.interceptors.request.use(config => {
+    const controller = new AbortController()
+    config.signal = controller.signal
+    // Map controller to config allowing external programmatic aborts (e.g. during rapid Logout).
+    activeRequests.set(config, controller)
+
     const token = localStorage.getItem('erp_access_token')
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
@@ -28,10 +36,18 @@ function processQueue(error, token = null) {
 }
 
 api.interceptors.response.use(
-    response => response,
+    response => {
+        // Self-clean Map registry strictly preventing memory leaks.
+        activeRequests.delete(response.config)
+        return response
+    },
     async error => {
         const originalRequest = error.config
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (originalRequest) {
+            activeRequests.delete(originalRequest)
+        }
+
+        if (error.response?.status === 401 && !originalRequest?._retry) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject })
@@ -56,10 +72,25 @@ api.interceptors.response.use(
                 return api(originalRequest)
             } catch (refreshError) {
                 processQueue(refreshError, null)
+                
+                // Aggressively terminate all parallel pending queries to prevent subsequent cascade loops / UI ghost freezing.
+                activeRequests.forEach(controller => controller.abort('Session Terminated.'))
+                activeRequests.clear()
+
+                // CRITICAL: Clear auth tokens SYNCHRONOUSLY before redirect.
+                // Previously this was "fire and forget" after window.location.replace,
+                // causing a race condition: the login page would reload, find stale
+                // erp_user in localStorage, redirect to /resto/pos, trigger 401s,
+                // and loop back to /login?timeout=1 infinitely.
                 localStorage.removeItem('erp_access_token')
                 localStorage.removeItem('erp_refresh_token')
                 localStorage.removeItem('erp_user')
-                window.location.href = '/login?timeout=1'
+                localStorage.removeItem('erp_branch')
+                localStorage.removeItem('erp-company')
+
+                // Now redirect — localStorage is clean so login page won't redirect away
+                window.location.replace('/login?timeout=1')
+                
                 return Promise.reject(refreshError)
             } finally {
                 isRefreshing = false

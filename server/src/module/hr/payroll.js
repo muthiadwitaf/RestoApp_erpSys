@@ -794,7 +794,7 @@ ${xmlItems}  </ListOfMmPayroll>
             `Export XML eBupot PPh 21: ${period.label} (${totalRecords} records, mode: ${recalculate ? 'recalculate' : 'actual'})`,
             req.user.id, req.user.name, req.user.branch_id,
         ]
-    ).catch(() => {});
+    );
 
     // ── 7. Return XML file ────────────────────────────────────────────────────
     const filename = `bupot_pph21_${period.bulan}_${period.tahun}.xml`;

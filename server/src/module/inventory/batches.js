@@ -267,7 +267,7 @@ router.put('/:uuid/dispose', requirePermission('inventory:edit'), validateUUID()
                 (disposalValue > 0 ? ` — Nilai: Rp ${Math.round(disposalValue).toLocaleString()}` : ''),
                 req.user.id, req.user.name, batch.branch_id
             ]
-        ).catch(() => { });
+        );
 
         res.json({
             message: `Batch ${batch.batch_no} berhasil dimusnahkan (${qtyToDispose} unit). Stok dan jurnal telah diperbarui.`,
@@ -404,7 +404,7 @@ router.post('/dispose-bulk', requirePermission('inventory:edit'), asyncHandler(a
                 (totalValue > 0 ? ` — Nilai total: Rp ${Math.round(totalValue).toLocaleString()}` : ''),
                 req.user.id, req.user.name, batches[0].branch_id
             ]
-        ).catch(() => { });
+        );
 
         res.json({
             message: `${batches.length} batch berhasil dimusnahkan (${totalDisposed} unit total). Stok dan jurnal telah diperbarui.`,
@@ -513,7 +513,7 @@ router.put('/:uuid/deplete', requirePermission('inventory:edit'), validateUUID()
             `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
              VALUES ('dispose','inventory',$1,$2,$3,$4)`,
             [`Tandai Habis Batch ${batch.batch_no}: ${batch.qty} unit ${batch.item_name}`, req.user.id, req.user.name, batch.branch_id]
-        ).catch(() => { });
+        );
 
         res.json({ message: 'Batch berhasil ditandai habis. Stok dan jurnal diperbarui.', batch: { uuid: batch.uuid, batch_no: batch.batch_no, status: 'depleted' } });
     } catch (err) { await client.query('ROLLBACK'); throw err; } finally { client.release(); }
@@ -538,7 +538,7 @@ router.put('/:uuid', requirePermission('inventory:edit'), validateUUID(), asyncH
     await query(
         `INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`,
         [`Sesuaikan Qty Batch ${result.rows[0].batch_no}: ${result.rows[0].qty}`, req.user.id, req.user.name]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'Qty batch berhasil diperbarui', batch: result.rows[0] });
 }));

@@ -29,13 +29,17 @@ router.use(authenticateToken);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_bank_holder VARCHAR(100)`);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_bank_number VARCHAR(50)`);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_qris_url VARCHAR(500)`);
+    await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_debit_bank VARCHAR(100)`);
     // Pengaturan Kasir columns
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_require_opening_cash BOOLEAN DEFAULT true`);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_hide_stock BOOLEAN DEFAULT false`);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_payment_methods VARCHAR(200) DEFAULT 'cash,qris,transfer'`);
     await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_auto_close_time VARCHAR(10)`);
+    await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_tax_pct NUMERIC(5,2) DEFAULT 10`);
+    await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_service_pct NUMERIC(5,2) DEFAULT 0`);
+    await safeAlter(`ALTER TABLE companies ADD COLUMN IF NOT EXISTS pos_waiter_commission_pct NUMERIC(5,2) DEFAULT 0`);
     // Ensure pos:settings permission row exists
-    await query(`INSERT INTO permissions (name) VALUES ('pos:settings') ON CONFLICT (name) DO NOTHING`).catch(() => {});
+    await query(`INSERT INTO permissions (name) VALUES ('pos:settings') ON CONFLICT (name) DO NOTHING`);
 })();
 
 // -- GET /api/sales/pos-settings --------------------------------------------
@@ -62,10 +66,14 @@ router.get('/', requirePermission('pos:view'), asyncHandler(async (req, res) => 
                     COALESCE(pos_bank_holder,'') AS pos_bank_holder,
                     COALESCE(pos_bank_number,'') AS pos_bank_number,
                     COALESCE(pos_qris_url,'')    AS pos_qris_url,
+                    COALESCE(pos_debit_bank,'')  AS pos_debit_bank,
                     COALESCE(pos_require_opening_cash, true)           AS pos_require_opening_cash,
                     COALESCE(pos_hide_stock, false)                    AS pos_hide_stock,
                     COALESCE(pos_payment_methods,'cash,qris,transfer') AS pos_payment_methods,
-                    COALESCE(pos_auto_close_time,'')                   AS pos_auto_close_time
+                    COALESCE(pos_auto_close_time,'')                   AS pos_auto_close_time,
+                    COALESCE(pos_tax_pct, 0.00)                        AS pos_tax_pct,
+                    COALESCE(pos_service_pct, 0.00)                    AS pos_service_pct,
+                    COALESCE(pos_waiter_commission_pct, 0.00)          AS pos_waiter_commission_pct
                FROM companies WHERE id = $1`, [companyId]
         );
         row = result.rows[0] || {};
@@ -85,7 +93,7 @@ router.get('/', requirePermission('pos:view'), asyncHandler(async (req, res) => 
             query(
                 `UPDATE companies SET pos_qris_url = $1 WHERE id = $2`,
                 [row.pos_qris_url, companyId]
-            ).catch(() => {});
+            );
         }
     }
 
@@ -105,10 +113,14 @@ router.put('/', requirePermission('pos:view', 'pos:settings', 'settings:edit'), 
         pos_bank_name:            (v) => v || null,
         pos_bank_holder:          (v) => v || null,
         pos_bank_number:          (v) => v || null,
+        pos_debit_bank:           (v) => v || null,
         pos_require_opening_cash: (v) => Boolean(v),
         pos_hide_stock:           (v) => Boolean(v),
         pos_payment_methods:      (v) => v || 'cash,qris,transfer',
         pos_auto_close_time:      (v) => v || null,
+        pos_tax_pct:              (v) => parseFloat(v) || 0,
+        pos_service_pct:          (v) => parseFloat(v) || 0,
+        pos_waiter_commission_pct:(v) => parseFloat(v) || 0,
     };
 
     const sets = [];
@@ -136,7 +148,7 @@ router.put('/', requirePermission('pos:view', 'pos:settings', 'settings:edit'), 
         `INSERT INTO audit_trail (action, module, description, user_id, user_name)
          VALUES ('update','pos','Update POS Settings',$1,$2)`,
         [req.user.id, req.user.name]
-    ).catch(() => {});
+    );
     res.json({ message: 'Konfigurasi POS berhasil disimpan.' });
 }));
 
@@ -185,7 +197,7 @@ router.post('/qris', requirePermission('pos:view', 'pos:settings', 'settings:edi
         `INSERT INTO audit_trail (action, module, description, user_id, user_name)
          VALUES ('update','pos','Upload QRIS image',$1,$2)`,
         [req.user.id, req.user.name]
-    ).catch(() => {});
+    );
 
     res.json({ message: 'Gambar QRIS berhasil diupload.', url: qrisUrl });
 }));

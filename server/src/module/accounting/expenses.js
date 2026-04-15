@@ -137,7 +137,7 @@ router.post('/', requirePermission('accounting:create'), asyncHandler(async (req
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('create','accounting',$1,$2,$3,$4)`,
         [`Buat biaya operasional: ${number} - ${description}`, req.user.id, req.user.name, branchIntId]
-    ).catch(() => { });
+    );
 
     res.status(201).json(result.rows[0]);
 }));
@@ -191,7 +191,7 @@ router.put('/:uuid', requirePermission('accounting:create'), validateUUID(), asy
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('update','accounting',$1,$2,$3,$4)`,
         [`Edit biaya: ${description}`, req.user.id, req.user.name, exp.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'Biaya berhasil diupdate' });
 }));
@@ -287,7 +287,7 @@ router.put('/:uuid/post', requirePermission('accounting:approve'), validateUUID(
             `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
              VALUES ('approve','accounting',$1,$2,$3,$4)`,
             [`Post biaya: ${exp.number} - Jurnal ${jeNumber}`, req.user.id, req.user.name, exp.branch_id]
-        ).catch(() => { });
+        );
 
         res.json({ message: `Biaya ${exp.number} berhasil diposting. Jurnal: ${jeNumber}` });
     } catch (err) {
@@ -320,7 +320,7 @@ router.delete('/:uuid', requirePermission('accounting:create'), validateUUID(), 
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('delete','accounting',$1,$2,$3,$4)`,
         [`Hapus biaya: ${exp.number} - ${exp.description}`, req.user.id, req.user.name, exp.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: `Biaya ${exp.number} berhasil dihapus` });
 }));

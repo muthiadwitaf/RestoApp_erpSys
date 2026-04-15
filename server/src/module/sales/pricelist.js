@@ -104,7 +104,7 @@ router.put('/:uuid', requirePermission('sales:edit', 'sales:manage'), validateUU
             `INSERT INTO audit_trail (action, module, description, user_id, user_name)
              VALUES ('update', 'sales', $1, $2, $3)`,
             [`Update pricelist ${itemName}`, req.user.id, req.user.name]
-        ).catch(() => { });
+        );
 
         res.json({ message: 'Harga berhasil diupdate' });
     } catch (err) {

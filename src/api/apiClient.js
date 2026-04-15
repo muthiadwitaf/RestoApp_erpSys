@@ -20,8 +20,8 @@ apiClient.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      // Dynamically import logout to avoid circular deps
-      import('../composables/useAuth').then(m => m.logout())
+      // Dynamically import Pinia store to ensure clean logout and prevent circular deps
+      import('@/stores/auth').then(m => m.useAuthStore().logout())
     }
     return Promise.reject(error)
   }

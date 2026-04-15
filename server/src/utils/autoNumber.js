@@ -13,31 +13,47 @@ async function generateAutoNumber(branchCode, docType, year = null) {
     try {
         await client.query('BEGIN');
 
-        // Lock and increment
-        const result = await client.query(
-            `INSERT INTO auto_number_counters (prefix, year, letter, counter)
-       VALUES ($1, $2, 'A', 1)
-       ON CONFLICT (prefix, year, letter)
-       DO UPDATE SET counter = auto_number_counters.counter + 1
-       RETURNING letter, counter`,
+        // Lock the specific counter row, preventing concurrent reads from passing until this transaction commits
+        const check = await client.query(
+            `SELECT letter, counter FROM auto_number_counters 
+             WHERE prefix = $1 AND year = $2 
+             ORDER BY letter DESC LIMIT 1 FOR UPDATE`, 
             [prefix, year]
         );
 
-        let { letter, counter } = result.rows[0];
+        let letter = 'A';
+        let counter = 1;
 
-        // If counter exceeds 99999999, roll to next letter
-        if (counter > 99999999) {
-            const nextLetter = String.fromCharCode(letter.charCodeAt(0) + 1);
+        if (check.rows.length === 0) {
+            // First time this prefix/year happens
             await client.query(
                 `INSERT INTO auto_number_counters (prefix, year, letter, counter)
-         VALUES ($1, $2, $3, 1)
-         ON CONFLICT (prefix, year, letter)
-         DO UPDATE SET counter = 1
-         RETURNING letter, counter`,
-                [prefix, year, nextLetter]
+                 VALUES ($1, $2, $3, $4)`,
+                [prefix, year, letter, counter]
             );
-            letter = nextLetter;
-            counter = 1;
+        } else {
+            letter = check.rows[0].letter;
+            // Ensure integer addition
+            counter = parseInt(check.rows[0].counter) + 1;
+
+            if (counter > 99999999) {
+                // Roll over to next alphabet character
+                letter = String.fromCharCode(letter.charCodeAt(0) + 1);
+                counter = 1;
+                await client.query(
+                    `INSERT INTO auto_number_counters (prefix, year, letter, counter)
+                     VALUES ($1, $2, $3, $4)`,
+                    [prefix, year, letter, counter]
+                );
+            } else {
+                // Typical increment update
+                await client.query(
+                    `UPDATE auto_number_counters 
+                     SET counter = $1 
+                     WHERE prefix = $2 AND year = $3 AND letter = $4`,
+                    [counter, prefix, year, letter]
+                );
+            }
         }
 
         await client.query('COMMIT');

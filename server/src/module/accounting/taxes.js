@@ -35,7 +35,7 @@ router.post('/', requirePermission('accounting:create'), asyncHandler(async (req
     );
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name)
                  VALUES ('create','accounting',$1,$2,$3)`,
-        [`Tambah konfigurasi pajak: ${name} (${rate}%)`, req.user.id, req.user.name]).catch(() => { });
+        [`Tambah konfigurasi pajak: ${name} (${rate}%)`, req.user.id, req.user.name]);
     res.status(201).json(result.rows[0]);
 }));
 
@@ -53,7 +53,7 @@ router.put('/:uuid', requirePermission('accounting:edit'), validateUUID(), async
     );
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name)
                  VALUES ('update','accounting',$1,$2,$3)`,
-        [`Update konfigurasi pajak: ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+        [`Update konfigurasi pajak: ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Tax config berhasil diupdate', data: result.rows[0] });
 }));
 
@@ -68,7 +68,7 @@ router.put('/:uuid/set-active', requirePermission('accounting:edit'), validateUU
     const { name, rate } = existing.rows[0];
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name)
                  VALUES ('update','accounting',$1,$2,$3)`,
-        [`Set pajak aktif: ${name} (${rate}%)`, req.user.id, req.user.name]).catch(() => { });
+        [`Set pajak aktif: ${name} (${rate}%)`, req.user.id, req.user.name]);
     res.json({ message: `${name} (${rate}%) sekarang menjadi tarif pajak aktif` });
 }));
 

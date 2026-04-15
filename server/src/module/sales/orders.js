@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { query } = require('../../config/db');
+const { query, getClient } = require('../../config/db');
 const { authenticateToken, requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
@@ -148,22 +148,34 @@ router.post('/', requirePermission('sales:create'), asyncHandler(async (req, res
     const branchResult = await query(`SELECT code FROM branches WHERE id = $1`, [resolvedBranchId]);
     const number = await generateAutoNumber(branchResult.rows[0]?.code || 'JKT', 'SO');
 
-    const result = await query(
-        `INSERT INTO sales_orders (number, date, customer_id, branch_id, currency, notes, created_by, extra_discount, tax_rate, tax_amount)
-         VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, uuid, number`,
-        [number, resolvedCustomerId, resolvedBranchId, currency || 'IDR', notes, req.user.name,
-            extraDisc, taxRate, taxAmount]
-    );
-    const soId = result.rows[0].id;
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
 
-    for (const line of resolvedLines) {
-        await query(`INSERT INTO sales_order_lines (so_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`,
-            [soId, line.resolvedItemId, line.qty, line.uom, line.price, line.discount || 0]);
+        const result = await client.query(
+            `INSERT INTO sales_orders (number, date, customer_id, branch_id, currency, notes, created_by, extra_discount, tax_rate, tax_amount)
+             VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, uuid, number`,
+            [number, resolvedCustomerId, resolvedBranchId, currency || 'IDR', notes, req.user.name,
+                extraDisc, taxRate, taxAmount]
+        );
+        const soId = result.rows[0].id;
+
+        for (const line of resolvedLines) {
+            await client.query(`INSERT INTO sales_order_lines (so_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`,
+                [soId, line.resolvedItemId, line.qty, line.uom, line.price, line.discount || 0]);
+        }
+
+        await client.query('COMMIT');
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','sales',$1,$2,$3,$4)`,
+            [`Membuat SO ${number}${taxRate > 0 ? ` (PPN ${taxRate}%)` : ''}`, req.user.id, req.user.name, resolvedBranchId]);
+        
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','sales',$1,$2,$3,$4)`,
-        [`Membuat SO ${number}${taxRate > 0 ? ` (PPN ${taxRate}%)` : ''}`, req.user.id, req.user.name, resolvedBranchId]);
-    res.status(201).json(result.rows[0]);
 }));
 
 // PUT submit/approve/reject
@@ -213,22 +225,34 @@ router.put('/:uuid', requirePermission('sales:edit'), validateUUID(), asyncHandl
     const dpp = subtotal * (1 - extraDisc / 100);
     const taxAmount = taxRate > 0 ? Math.round(dpp * taxRate / 100) : 0;
 
-    // Update header SO
-    await query(
-        `UPDATE sales_orders SET customer_id=$1, notes=$2, extra_discount=$3, tax_rate=$4, tax_amount=$5, currency=$6, updated_at=NOW() WHERE id=$7`,
-        [resolvedCustomerId, notes || null, extraDisc, taxRate, taxAmount, currency || 'IDR', so.id]
-    );
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
 
-    // Delete & re-insert lines
-    await query(`DELETE FROM sales_order_lines WHERE so_id = $1`, [so.id]);
-    for (const line of resolvedLines) {
-        await query(`INSERT INTO sales_order_lines (so_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`,
-            [so.id, line.resolvedItemId, line.qty, line.uom, line.price, line.discount || 0]);
+        // Update header SO
+        await client.query(
+            `UPDATE sales_orders SET customer_id=$1, notes=$2, extra_discount=$3, tax_rate=$4, tax_amount=$5, currency=$6, updated_at=NOW() WHERE id=$7`,
+            [resolvedCustomerId, notes || null, extraDisc, taxRate, taxAmount, currency || 'IDR', so.id]
+        );
+
+        // Delete & re-insert lines
+        await client.query(`DELETE FROM sales_order_lines WHERE so_id = $1`, [so.id]);
+        for (const line of resolvedLines) {
+            await client.query(`INSERT INTO sales_order_lines (so_id, item_id, qty, uom, price, discount) VALUES ($1,$2,$3,$4,$5,$6)`,
+                [so.id, line.resolvedItemId, line.qty, line.uom, line.price, line.discount || 0]);
+        }
+
+        await client.query('COMMIT');
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('update','sales',$1,$2,$3,$4)`,
+            [`Update SO ${so.number}`, req.user.id, req.user.name, so.branch_id]);
+        
+        res.json({ message: 'SO berhasil diupdate', uuid: req.params.uuid });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('update','sales',$1,$2,$3,$4)`,
-        [`Update SO ${so.number}`, req.user.id, req.user.name, so.branch_id]);
-    res.json({ message: 'SO berhasil diupdate', uuid: req.params.uuid });
 }));
 
 router.put('/:uuid/submit', requirePermission('sales:edit'), validateUUID(), asyncHandler(async (req, res) => {

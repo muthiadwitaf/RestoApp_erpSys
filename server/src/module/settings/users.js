@@ -109,14 +109,29 @@ router.post('/', requirePermission('settings:create'), asyncHandler(async (req, 
     await query(
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, company_id) VALUES ('create','settings',$1,$2,$3,$4)`,
         [`Tambah user: ${name.trim()} (${email.trim()})`, req.user.id, req.user.name, companyId]
-    ).catch(() => { });
+    );
 
     res.status(201).json(user);
 }));
 
 // PUT /api/settings/users/:uuid
-router.put('/:uuid', requirePermission('settings:edit'), validateUUID(), asyncHandler(async (req, res) => {
+router.put('/:uuid', validateUUID(), asyncHandler(async (req, res) => {
     const { name, email, phone, password, roleIds, branchIds, is_active, theme_preference } = req.body;
+    
+    // Permission check: allow editing self profile, but restrict privileged fields
+    const isTargetingSelf = req.user.uuid === req.params.uuid;
+    const hasSettingsEdit = req.user.is_super_admin || (req.user.permissions && req.user.permissions.includes('settings:edit'));
+    
+    if (!isTargetingSelf && !hasSettingsEdit) {
+        return res.status(403).json({ error: 'Anda tidak memiliki izin untuk mengedit user ini' });
+    }
+    
+    if (isTargetingSelf && !hasSettingsEdit) {
+        if (roleIds !== undefined || branchIds !== undefined || is_active !== undefined) {
+             return res.status(403).json({ error: 'Anda tidak dapat mengubah peran, cabang, atau status aktif' });
+        }
+    }
+
     const userResult = await query(`SELECT id FROM users WHERE uuid = $1`, [req.params.uuid]);
     if (userResult.rows.length === 0) return res.status(404).json({ error: 'User tidak ditemukan' });
     const userId = userResult.rows[0].id;
@@ -196,7 +211,7 @@ router.put('/:uuid', requirePermission('settings:edit'), validateUUID(), asyncHa
     await query(
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, company_id) VALUES ('update','settings',$1,$2,$3,$4)`,
         [`Edit user: ${uName} (${uEmail})`, req.user.id, req.user.name, req.user.company_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'User berhasil diupdate' });
 }));
@@ -221,7 +236,7 @@ router.delete('/:uuid', requirePermission('settings:delete'), validateUUID(), as
     await query(
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, company_id) VALUES ('delete','settings',$1,$2,$3,$4)`,
         [`Nonaktifkan user: ${tName} (${tEmail})`, req.user.id, req.user.name, req.user.company_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: 'User dinonaktifkan' });
 }));

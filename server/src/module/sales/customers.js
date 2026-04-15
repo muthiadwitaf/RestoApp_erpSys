@@ -29,6 +29,17 @@ router.get('/', requirePermission('sales:view', 'accounting:view'), asyncHandler
         wc += ` AND c.branch_id = $${idx++}`;
         values.push(rBranch);
     }
+    
+    // Pagination (Optional but recommended to prevent memory overload)
+    let paginationClause = '';
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    if (!isNaN(page) && !isNaN(limit) && page > 0 && limit > 0) {
+        const offset = (page - 1) * limit;
+        paginationClause = `LIMIT $${idx++} OFFSET $${idx++}`;
+        values.push(limit, offset);
+    }
+
     const result = await query(
         `SELECT c.uuid, c.code, c.name, c.address, c.phone, c.email,
                 c.is_pkp, c.npwp, c.customer_type,
@@ -37,12 +48,18 @@ router.get('/', requirePermission('sales:view', 'accounting:view'), asyncHandler
          FROM customers c
          LEFT JOIN customer_groups cg ON c.group_id = cg.id
          LEFT JOIN branches b ON c.branch_id = b.id
-         ${wc} ORDER BY c.id`, values
+         ${wc} ORDER BY c.id ${paginationClause}`, values
     );
     const rows = result.rows.map(r => ({
         ...r,
         kode_transaksi: getKodeTransaksi(r.customer_type)
     }));
+    
+    if (paginationClause) {
+        const countRes = await query(`SELECT COUNT(*) FROM customers c ${wc}`, values.slice(0, branch_id ? 2 : 1));
+        return res.json({ data: rows, total: parseInt(countRes.rows[0].count), page, limit });
+    }
+    
     res.json(rows);
 }));
 
@@ -94,7 +111,7 @@ router.post('/', requirePermission('sales:create'), asyncHandler(async (req, res
             is_pkp ?? false, npwp?.trim() || null, cType, companyId]
     );
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','sales',$1,$2,$3)`,
-        [`Tambah pelanggan: ${result.rows[0].code} - ${result.rows[0].name} (${cType})`, req.user.id, req.user.name]).catch(() => { });
+        [`Tambah pelanggan: ${result.rows[0].code} - ${result.rows[0].name} (${cType})`, req.user.id, req.user.name]);
     res.status(201).json({ ...result.rows[0], kode_transaksi: getKodeTransaksi(cType) });
 }));
 
@@ -131,7 +148,7 @@ router.put('/:uuid', requirePermission('sales:edit'), validateUUID(), asyncHandl
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','sales',$1,$2,$3)`,
-        [`Update pelanggan: ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+        [`Update pelanggan: ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Pelanggan berhasil diupdate', kode_transaksi: getKodeTransaksi(result.rows[0].customer_type) });
 }));
 
@@ -140,7 +157,7 @@ router.delete('/:uuid', requirePermission('sales:delete'), validateUUID(), async
     const result = await query(`DELETE FROM customers WHERE uuid = $1 RETURNING uuid`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pelanggan tidak ditemukan' });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','sales',$1,$2,$3)`,
-        [`Hapus pelanggan: ${req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+        [`Hapus pelanggan: ${req.params.uuid}`, req.user.id, req.user.name]);
     res.json({ message: 'Pelanggan berhasil dihapus' });
 }));
 

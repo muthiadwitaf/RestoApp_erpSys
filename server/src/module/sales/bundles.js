@@ -28,7 +28,7 @@ router.post('/', requirePermission('inventory:create'), asyncHandler(async (req,
         const rItem = await resolveUUID(item.item_id, 'items', query);
         await query(`INSERT INTO bundle_items (bundle_id, item_id, qty) VALUES ($1,$2,$3)`, [result.rows[0].id, rItem, item.qty]);
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`, [`Tambah bundle: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`, [`Tambah bundle: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.status(201).json({ uuid: result.rows[0].uuid });
 }));
 
@@ -44,7 +44,7 @@ router.put('/:uuid', requirePermission('inventory:edit'), validateUUID(), asyncH
             await query(`INSERT INTO bundle_items (bundle_id, item_id, qty) VALUES ($1,$2,$3)`, [b.rows[0].id, rItem, item.qty]);
         }
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Update bundle: ${req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Update bundle: ${req.params.uuid}`, req.user.id, req.user.name]);
     res.json({ message: 'Bundle berhasil diupdate' });
 }));
 
@@ -53,7 +53,7 @@ router.delete('/:uuid', requirePermission('inventory:delete'), validateUUID(), a
     if (b.rows.length === 0) return res.status(404).json({ error: 'Bundle tidak ditemukan' });
     await query(`DELETE FROM bundle_items WHERE bundle_id = $1`, [b.rows[0].id]);
     await query(`DELETE FROM bundles WHERE id = $1`, [b.rows[0].id]);
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','inventory',$1,$2,$3)`, [`Hapus bundle: ${req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','inventory',$1,$2,$3)`, [`Hapus bundle: ${req.params.uuid}`, req.user.id, req.user.name]);
     res.json({ message: 'Bundle berhasil dihapus' });
 }));
 

@@ -10,6 +10,9 @@
         <button class="btn btn-sm btn-primary" @click="openAddItem" id="btn-add-menu">
           <i class="bi bi-plus-lg"></i> Tambah Menu
         </button>
+        <button class="btn btn-sm btn-secondary ms-2" @click="refreshMenu" id="btn-refresh-menu">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
       </div>
     </div>
 
@@ -220,7 +223,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onActivated } from 'vue'
 import { getRestoMenu, createRestoMenuItem, updateRestoMenuItem, deleteRestoMenuItem } from '@/services/sales/restoApi'
 
 const loading = ref(false)
@@ -263,6 +266,16 @@ async function loadMenu() {
   } catch (e) { console.error('Load menu error:', e) }
   finally { loading.value = false }
 }
+
+function refreshMenu() {
+  // Explicit manual refresh, re-fetch menu data
+  loadMenu()
+}
+
+onActivated(() => {
+  // When the view is re-activated (e.g., after navigation), ensure data is fresh
+  loadMenu()
+})
 
 function openAddItem() {
   itemForm.value = { uuid: null, name: '', description: '', price: 0, category: selectedCategory.value || 'Umum', sort_order: 0, is_available: true, image_url: null }

@@ -126,7 +126,7 @@ router.post('/', requirePermission('purchasing:create'), asyncHandler(async (req
         [newCode, name.trim(), address?.trim(), phone?.trim(), email?.trim(), rBranch || null, is_pkp || false, npwp?.trim() || null, companyId]
     );
     res.status(201).json(result.rows[0]);
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','purchasing',$1,$2,$3)`, [`Tambah supplier: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','purchasing',$1,$2,$3)`, [`Tambah supplier: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
 }));
 
 // PUT /api/purchasing/suppliers/:uuid
@@ -138,7 +138,7 @@ router.put('/:uuid', requirePermission('purchasing:edit'), validateUUID(), async
         [name?.trim(), address?.trim(), phone?.trim(), email?.trim(), is_pkp != null ? is_pkp : null, npwp?.trim() || null, req.params.uuid]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Supplier tidak ditemukan' });
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','purchasing',$1,$2,$3)`, [`Update supplier: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','purchasing',$1,$2,$3)`, [`Update supplier: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Supplier berhasil diupdate' });
 }));
 
@@ -148,7 +148,7 @@ router.delete('/:uuid', requirePermission('purchasing:delete'), validateUUID(), 
     if (existing.rows.length === 0) return res.status(404).json({ error: 'Supplier tidak ditemukan' });
     const { code, name } = existing.rows[0];
     await query(`DELETE FROM suppliers WHERE uuid = $1`, [req.params.uuid]);
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','purchasing',$1,$2,$3)`, [`Hapus supplier: ${code} - ${name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','purchasing',$1,$2,$3)`, [`Hapus supplier: ${code} - ${name}`, req.user.id, req.user.name]);
     res.json({ message: 'Supplier berhasil dihapus' });
 }));
 

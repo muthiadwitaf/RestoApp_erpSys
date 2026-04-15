@@ -35,7 +35,7 @@ router.post('/', requirePermission('inventory:create'), asyncHandler(async (req,
     }
 
     const result = await query(`INSERT INTO warehouses (code, name, branch_id, address) VALUES ($1,$2,$3,$4) RETURNING uuid, code, name`, [code.trim(), name.trim(), resolvedBranchId, address?.trim()]);
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`, [`Tambah gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`, [`Tambah gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.status(201).json(result.rows[0]);
 }));
 
@@ -57,7 +57,7 @@ router.put('/:uuid', requirePermission('inventory:edit'), validateUUID(), asyncH
 
     const result = await query(`UPDATE warehouses SET name=COALESCE($1,name), address=COALESCE($2,address), branch_id=COALESCE($3,branch_id), is_active=COALESCE($4,is_active), updated_at=NOW() WHERE uuid=$5 RETURNING uuid, code, name`, [name?.trim(), address?.trim(), resolvedBranchId, is_active, req.params.uuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Gudang tidak ditemukan' });
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Update gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Update gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Gudang berhasil diupdate' });
 }));
 
@@ -71,7 +71,7 @@ router.put('/:uuid/deactivate', requirePermission('inventory:edit'), validateUUI
         return res.status(400).json({ error: `Tidak bisa menonaktifkan gudang. Masih ada stok sebanyak ${stockCheck.rows[0].total_stock} unit di gudang ini. Pindahkan stok terlebih dahulu.` });
     }
     await query(`UPDATE warehouses SET is_active = false, updated_at = NOW() WHERE id = $1`, [wh.rows[0].id]);
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Nonaktifkan gudang: ${wh.rows[0].code} - ${wh.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Nonaktifkan gudang: ${wh.rows[0].code} - ${wh.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Gudang berhasil dinonaktifkan' });
 }));
 
@@ -79,7 +79,7 @@ router.put('/:uuid/deactivate', requirePermission('inventory:edit'), validateUUI
 router.put('/:uuid/activate', requirePermission('inventory:edit'), validateUUID(), asyncHandler(async (req, res) => {
     const result = await query(`UPDATE warehouses SET is_active = true, updated_at = NOW() WHERE uuid = $1 RETURNING uuid, code, name`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Gudang tidak ditemukan' });
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Aktifkan kembali gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`, [`Aktifkan kembali gudang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
     res.json({ message: 'Gudang berhasil diaktifkan kembali' });
 }));
 

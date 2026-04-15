@@ -54,12 +54,13 @@ function requireSuperAdmin(req, res, next) {
 
 // Check branch access — validasi branch milik company aktif
 function requireBranch(req, res, next) {
+    if (!req.user) return res.status(401).json({ error: 'Token diperlukan' });
     const branchId = req.params.branchId || req.body.branch_id || req.query.branch_id;
     if (!branchId) return next();
-    if (req.user?.is_super_admin) return next(); // Super Admin bypass
+    if (req.user.is_super_admin) return next(); // Super Admin bypass
 
     // Pastikan branch ada di daftar branch user (sudah difilter per company saat login)
-    if (req.user?.branchIds && !req.user.branchIds.includes(branchId)) {
+    if (req.user.branchIds && !req.user.branchIds.includes(branchId)) {
         return res.status(403).json({ error: 'Anda tidak memiliki akses ke cabang ini' });
     }
     next();

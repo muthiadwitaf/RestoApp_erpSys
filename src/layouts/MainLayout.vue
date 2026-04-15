@@ -14,37 +14,42 @@
       <ul class="sidebar-nav pos-sidebar-nav mt-3">
         <li class="nav-item" v-permission="'pos:view'">
           <router-link to="/resto/pos" class="nav-link" active-class="active">
-            <i class="bi bi-display"></i><span class="nav-text">Kasir POS</span>
+            <i class="bi bi-display"></i><span class="nav-text">{{ t('nav_pos') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'pos:view'">
+        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
           <router-link to="/resto/tables" class="nav-link" active-class="active">
-            <i class="bi bi-grid-3x3-gap-fill"></i><span class="nav-text">Denah Meja</span>
+            <i class="bi bi-grid-3x3-gap-fill"></i><span class="nav-text">{{ t('nav_tables') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'pos:view'">
+        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
           <router-link to="/resto/menu" class="nav-link" active-class="active">
-            <i class="bi bi-journal-richtext"></i><span class="nav-text">Katalog Menu</span>
+            <i class="bi bi-journal-richtext"></i><span class="nav-text">{{ t('nav_menu') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'pos:view'">
+        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
           <router-link to="/resto/kitchen" class="nav-link" active-class="active">
-            <i class="bi bi-fire"></i><span class="nav-text">Kitchen Display</span>
+            <i class="bi bi-fire"></i><span class="nav-text">{{ t('nav_kitchen') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'pos:view'">
+        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
           <router-link to="/resto/history" class="nav-link" active-class="active">
-            <i class="bi bi-clock-history"></i><span class="nav-text">Riwayat Transaksi Resto</span>
+            <i class="bi bi-clock-history"></i><span class="nav-text">{{ t('nav_history') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'reportingsales:view'">
+        <li class="nav-item" v-permission="'reportingsales:view'" v-show="!isOnlyKasir">
           <router-link to="/resto/reports" class="nav-link" active-class="active">
-            <i class="bi bi-bar-chart-line"></i><span class="nav-text">Laporan Harian Resto</span>
+            <i class="bi bi-bar-chart-line"></i><span class="nav-text">{{ t('nav_reports') }}</span>
           </router-link>
         </li>
         <li class="nav-item" v-permission="'pos:view'">
           <router-link to="/resto/settings" class="nav-link" active-class="active">
-            <i class="bi bi-gear"></i><span class="nav-text">Pengaturan Sistem Resto</span>
+            <i class="bi bi-gear"></i><span class="nav-text">{{ t('nav_settings') }}</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
+          <router-link to="/resto/guide" class="nav-link" active-class="active">
+            <i class="bi bi-question-circle"></i><span class="nav-text">Bantuan</span>
           </router-link>
         </li>
       </ul>
@@ -99,7 +104,7 @@
           </div>
 
           <!-- User -->
-          <UserDropdown />
+          <UserPanel />
         </div>
       </header>
 
@@ -119,7 +124,8 @@ import { useBranchStore } from '@/stores/branch'
 import { useNotificationStore } from '@/stores/notification'
 import { useThemeStore } from '@/stores/theme'
 import { useCompanyStore } from '@/stores/company'
-import UserDropdown from '@/components/UserDropdown.vue'
+import { useLang } from '@/composables/useLang'
+import UserPanel from '@/components/UserPanel.vue'
 
 const router = useRouter()
 const route  = useRoute()
@@ -128,6 +134,7 @@ const branchStore = useBranchStore()
 const notifStore = useNotificationStore()
 const themeStore = useThemeStore()
 const companyStore = useCompanyStore()
+const { t } = useLang()
 
 const localRestoName = ref(localStorage.getItem('resto_local_name') || 'Smart POS')
 
@@ -143,6 +150,14 @@ const isHrManager = computed(() =>
   authStore.user?.roleNames?.includes('HR Manager') ||
   authStore.hasPermission('hr:delete')
 )
+
+// Check if user is Kasir only
+const isOnlyKasir = computed(() => {
+   if (authStore.user?.is_super_admin) return false
+   const roles = authStore.user?.roleNames || []
+   // if Kasir is their only role, or they have no pos:create
+   return roles.includes('Kasir') && !authStore.hasPermission('pos:create')
+})
 
 // Auto-open menu HR saat pertama kali masuk halaman HR
 onMounted(() => {

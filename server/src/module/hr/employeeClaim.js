@@ -283,7 +283,7 @@ router.post('/', asyncHandler(async (req, res) => {
             `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
              VALUES ('create','hr',$1,$2,$3,$4)`,
             [`Karyawan buat claim: ${number} - ${description}`, req.user.id, req.user.name, emp.branch_id]
-        ).catch(() => { });
+        );
 
         res.status(201).json({ uuid: reimb.uuid, number: reimb.number });
     } catch (err) {
@@ -329,7 +329,7 @@ router.delete('/:uuid', validateUUID(), asyncHandler(async (req, res) => {
         `INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id)
          VALUES ('delete','hr',$1,$2,$3,$4)`,
         [`Hapus claim: ${reimb.number}`, req.user.id, req.user.name, emp.branch_id]
-    ).catch(() => { });
+    );
 
     res.json({ message: `Claim ${reimb.number} berhasil dihapus` });
 }));

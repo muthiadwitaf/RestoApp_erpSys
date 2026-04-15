@@ -222,7 +222,7 @@ router.post('/', requirePermission('inventory:create'), asyncHandler(async (req,
             }
             if (purchasePrice > 0) {
                 const totalResult = await client.query(
-                    `SELECT COALESCE(SUM(qty), 0) as total_qty FROM inventory WHERE item_id = $1`, [rItem]
+                    `SELECT COALESCE(SUM(qty), 0) as total_qty FROM inventory WHERE item_id = $1 FOR UPDATE`, [rItem]
                 );
                 const totalQtyAfter = parseInt(totalResult.rows[0].total_qty);
                 const oldQty = totalQtyAfter - stockQty;

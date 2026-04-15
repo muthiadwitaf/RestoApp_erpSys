@@ -23,6 +23,12 @@
           <i class="bi bi-gear me-1"></i>Sistem &amp; Profil
         </button>
       </li>
+      <li class="nav-item">
+        <button class="nav-link" :class="{ active: activeTab === 'waiter' }"
+                @click="activeTab = 'waiter'; loadWaiters()" id="tab-waiter">
+          <i class="bi bi-people me-1"></i>Kelola Waiters
+        </button>
+      </li>
     </ul>
 
     <!-- ============================================================ -->
@@ -181,32 +187,52 @@
             <div class="card-body">
               <div class="row align-items-start g-3">
                 <div class="col-md-5">
-                  <div class="fw-semibold">Tutup Kasir Otomatis</div>
+                  <div class="fw-semibold">Bisnis & Pajak</div>
                   <div class="text-muted small mt-1">
-                    Atur jam tutup kasir otomatis. Kosongkan jika tidak diperlukan.
+                    Atur besaran Pajak dan Biaya Layanan default yang akan diterapkan pada setiap transaksi.
                   </div>
                 </div>
                 <div class="col-md-7">
-                  <label class="form-label small text-muted mb-1">Jam Tutup Otomatis</label>
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="input-group" style="max-width:180px">
-                      <span class="input-group-text"><i class="bi bi-clock"></i></span>
-                      <input type="time" class="form-control"
-                             v-model="kasirForm.pos_auto_close_time" id="input-auto-close-time" />
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small text-muted mb-1">Pajak Resto (PB1/PPN) %</label>
+                      <div class="input-group">
+                        <input type="number" step="0.5" class="form-control" v-model="kasirForm.pos_tax_pct" />
+                        <span class="input-group-text">%</span>
+                      </div>
                     </div>
-                    <button class="btn btn-sm btn-outline-secondary"
-                            @click="kasirForm.pos_auto_close_time = ''"
-                            title="Nonaktifkan tutup otomatis">
-                      <i class="bi bi-x-circle me-1"></i>Nonaktifkan
-                    </button>
-                  </div>
-                  <div class="form-text">
-                    {{ kasirForm.pos_auto_close_time
-                        ? 'Kasir akan otomatis ditutup pada pukul ' + kasirForm.pos_auto_close_time
-                        : 'Tutup kasir otomatis tidak aktif.' }}
+                    <div class="col-6">
+                      <label class="form-label small text-muted mb-1">Biaya Layanan (Service) %</label>
+                      <div class="input-group">
+                        <input type="number" step="0.5" class="form-control" v-model="kasirForm.pos_service_pct" />
+                        <span class="input-group-text">%</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <hr class="my-4">
+              <div class="row align-items-start g-3">
+                <div class="col-md-5">
+                  <div class="fw-semibold">Insentif & Komisi Karyawan</div>
+                  <div class="text-muted small mt-1">
+                    Atur besaran Komisi bawaan (dalam persen) yang diberikan kepada pelayan/waiter dari pesanan restoran.
+                  </div>
+                </div>
+                <div class="col-md-7">
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <label class="form-label small text-muted mb-1">Persentase Komisi Waiter %</label>
+                      <div class="input-group">
+                        <input type="number" step="0.5" class="form-control" v-model="kasirForm.pos_waiter_commission_pct" />
+                        <span class="input-group-text">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
             </div>
           </div>
         </div>
@@ -258,6 +284,155 @@
 
       </div>
     </div>
+
+    <!-- ============================================================ -->
+    <!-- TAB 3: Kelola Waiter                                         -->
+    <!-- ============================================================ -->
+    <div v-show="activeTab === 'waiter'" style="max-width:920px">
+      <div class="row g-3">
+
+        <!-- Tambah Waiter -->
+        <div class="col-12">
+          <div class="card border-primary">
+            <div class="card-header py-2 bg-primary text-white">
+              <h6 class="mb-0 fw-bold"><i class="bi bi-person-plus me-2"></i>Tambah Waiter Baru</h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold mb-1">Nama Waiter <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" v-model="waiterForm.name" placeholder="Contoh: Ahmad" id="input-waiter-name" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold mb-1">No. Telepon</label>
+                  <input type="text" class="form-control" v-model="waiterForm.phone" placeholder="08xxxxxxxxx" id="input-waiter-phone" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small fw-bold mb-1">PIN Absen</label>
+                  <input type="password" maxlength="6" class="form-control" v-model="waiterForm.pin" placeholder="Max 6 digit" id="input-waiter-pin" />
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label small fw-bold mb-1">Komisi Override</label>
+                  <div class="input-group">
+                    <input type="number" step="0.5" class="form-control" v-model="waiterForm.commission_pct" placeholder="(Global)" id="input-waiter-commission" />
+                    <span class="input-group-text">%</span>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <button class="btn btn-primary w-100" @click="doAddWaiter" :disabled="waiterSaving" id="btn-add-waiter">
+                    <i class="bi bi-plus-circle me-1"></i>{{ waiterSaving ? 'Meny...' : 'Tambah' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daftar Waiter -->
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header py-2 d-flex justify-content-between align-items-center">
+              <h6 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2"></i>Daftar Waiter</h6>
+              <span class="badge bg-primary">{{ waiterList.length }} waiter</span>
+            </div>
+            <div class="card-body p-0">
+              <div v-if="waiterLoading" class="text-center py-4">
+                <div class="spinner-border spinner-border-sm text-primary"></div>
+                <span class="ms-2 text-muted">Memuat daftar waiter...</span>
+              </div>
+              <div v-else-if="waiterList.length === 0" class="text-center py-5 text-muted">
+                <i class="bi bi-person-badge display-4 d-block mb-3" style="opacity:0.25"></i>
+                <h6>Belum ada waiter terdaftar</h6>
+                <p class="small">Tambahkan waiter di form di atas untuk mulai menggunakannya di layar kasir.</p>
+              </div>
+              <div v-else class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                  <thead class="table-light">
+                      <th class="ps-3" style="width:5%">#</th>
+                      <th>Nama</th>
+                      <th>Telepon</th>
+                      <th class="text-center">PIN</th>
+                      <th class="text-center">Komisi (%)</th>
+                      <th class="text-center">Status</th>
+                      <th class="text-center" style="width:150px">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(w, idx) in waiterList" :key="w.uuid" :class="{'opacity-50': !w.is_active}">
+                      <td class="ps-3 text-muted">{{ idx + 1 }}</td>
+                      <td>
+                        <template v-if="editingWaiter === w.uuid">
+                          <input type="text" class="form-control form-control-sm" v-model="editWaiterForm.name" />
+                        </template>
+                        <template v-else>
+                          <div class="d-flex align-items-center gap-2">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width:30px;height:30px">
+                              <i class="bi bi-person-fill"></i>
+                            </div>
+                            <span class="fw-semibold">{{ w.name }}</span>
+                          </div>
+                        </template>
+                      </td>
+                      <td>
+                        <template v-if="editingWaiter === w.uuid">
+                          <input type="text" class="form-control form-control-sm" v-model="editWaiterForm.phone" placeholder="08xx" />
+                        </template>
+                        <template v-else>
+                          <span class="text-muted">{{ w.phone || '-' }}</span>
+                        </template>
+                      </td>
+                      <td class="text-center">
+                        <template v-if="editingWaiter === w.uuid">
+                          <input type="password" maxlength="6" class="form-control form-control-sm" style="max-width:80px;margin:0 auto" v-model="editWaiterForm.pin" placeholder="Baru" />
+                        </template>
+                        <template v-else>
+                          <span v-if="w.has_pin" class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-shield-lock me-1"></i>Ada</span>
+                          <span v-else class="badge bg-light text-muted border border-secondary"><i class="bi bi-unlock me-1"></i>Tidak</span>
+                        </template>
+                      </td>
+                      <td class="text-center">
+                        <template v-if="editingWaiter === w.uuid">
+                          <input type="number" step="0.5" class="form-control form-control-sm" style="max-width:80px;margin:0 auto" v-model="editWaiterForm.commission_pct" placeholder="-" />
+                        </template>
+                        <template v-else>
+                          <span v-if="w.commission_pct != null" class="badge bg-success">{{ w.commission_pct }}%</span>
+                          <span v-else class="badge bg-secondary">Global ({{ kasirForm.pos_waiter_commission_pct }}%)</span>
+                        </template>
+                      </td>
+                      <td class="text-center">
+                        <div class="form-check form-switch d-inline-block">
+                          <input class="form-check-input" type="checkbox" role="switch"
+                                 :checked="w.is_active" @change="doToggleWaiter(w)" />
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <template v-if="editingWaiter === w.uuid">
+                          <button class="btn btn-sm btn-success me-1" @click="doSaveEditWaiter(w)" :disabled="waiterSaving">
+                            <i class="bi bi-check-lg"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-secondary" @click="editingWaiter = null">
+                            <i class="bi bi-x-lg"></i>
+                          </button>
+                        </template>
+                        <template v-else>
+                          <button class="btn btn-sm btn-outline-primary me-1" @click="startEditWaiter(w)" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" @click="doDeleteWaiter(w)" title="Hapus">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </template>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </template>
 
@@ -267,6 +442,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import * as salesApi from '@/services/sales/api'
+import { getWaitersList, createWaiter, updateWaiter, deleteWaiter } from '@/services/sales/restoApi'
 
 const authStore = useAuthStore()
 const toast     = useToast()
@@ -304,7 +480,10 @@ const uploading      = ref(false)
 const kasirForm = ref({
   pos_require_opening_cash: true,
   pos_hide_stock:           false,
-  pos_auto_close_time:      ''
+  pos_auto_close_time:      '',
+  pos_tax_pct:              10,
+  pos_service_pct:          0,
+  pos_waiter_commission_pct: 0
 })
 const selectedMethods = ref(['cash', 'qris', 'transfer'])
 const savingKasir     = ref(false)
@@ -366,10 +545,13 @@ async function doSaveKasir() {
   savingKasir.value = true
   try {
     await salesApi.savePosSettings({
-      pos_require_opening_cash: kasirForm.value.pos_require_opening_cash,
-      pos_hide_stock:           kasirForm.value.pos_hide_stock,
-      pos_payment_methods:      selectedMethods.value.join(',') || 'cash,qris,transfer',
-      pos_auto_close_time:      kasirForm.value.pos_auto_close_time || ''
+      pos_require_opening_cash:  kasirForm.value.pos_require_opening_cash,
+      pos_hide_stock:            kasirForm.value.pos_hide_stock,
+      pos_payment_methods:       selectedMethods.value.join(',') || 'cash,qris,transfer',
+      pos_auto_close_time:       kasirForm.value.pos_auto_close_time || '',
+      pos_tax_pct:               kasirForm.value.pos_tax_pct,
+      pos_service_pct:           kasirForm.value.pos_service_pct,
+      pos_waiter_commission_pct: kasirForm.value.pos_waiter_commission_pct
     })
     toast.success('Pengaturan Kasir berhasil disimpan!')
   } catch (e) {
@@ -412,6 +594,9 @@ onMounted(async () => {
       ? Boolean(data.pos_require_opening_cash) : true
     kasirForm.value.pos_hide_stock           = Boolean(data.pos_hide_stock)
     kasirForm.value.pos_auto_close_time      = data.pos_auto_close_time || ''
+    kasirForm.value.pos_tax_pct              = data.pos_tax_pct !== undefined ? parseFloat(data.pos_tax_pct) : 10
+    kasirForm.value.pos_service_pct          = data.pos_service_pct !== undefined ? parseFloat(data.pos_service_pct) : 0
+    kasirForm.value.pos_waiter_commission_pct = data.pos_waiter_commission_pct !== undefined ? parseFloat(data.pos_waiter_commission_pct) : 0
     // Payment methods: parse comma-separated string
     if (data.pos_payment_methods) {
       selectedMethods.value = data.pos_payment_methods.split(',').map(s => s.trim()).filter(Boolean)
@@ -420,4 +605,106 @@ onMounted(async () => {
     // settings may not be configured yet -- not fatal
   }
 })
+
+// -- Tab 3: Kelola Waiter ---------------------------------------------------
+const waiterList = ref([])
+const waiterLoading = ref(false)
+const waiterSaving = ref(false)
+const waiterForm = ref({ name: '', phone: '', commission_pct: '', pin: '' })
+const editingWaiter = ref(null)
+const editWaiterForm = ref({ name: '', phone: '', commission_pct: '', pin: '' })
+
+async function loadWaiters() {
+  waiterLoading.value = true
+  try {
+    const { data } = await getWaitersList()
+    waiterList.value = data || []
+  } catch (e) {
+    toast.error('Gagal memuat daftar waiter.')
+  } finally {
+    waiterLoading.value = false
+  }
+}
+
+async function doAddWaiter() {
+  if (!waiterForm.value.name.trim()) {
+    toast.warning('Nama waiter wajib diisi.')
+    return
+  }
+  waiterSaving.value = true
+  try {
+    const payload = {
+      name: waiterForm.value.name.trim(),
+      phone: waiterForm.value.phone || null,
+      commission_pct: waiterForm.value.commission_pct !== '' ? parseFloat(waiterForm.value.commission_pct) : null,
+      pin: waiterForm.value.pin || null
+    }
+    await createWaiter(payload)
+    toast.success('Waiter berhasil ditambahkan!')
+    waiterForm.value = { name: '', phone: '', commission_pct: '', pin: '' }
+    await loadWaiters()
+  } catch (e) {
+    toast.error('Gagal menambah waiter: ' + (e.response?.data?.error || e.message))
+  } finally {
+    waiterSaving.value = false
+  }
+}
+
+function startEditWaiter(w) {
+  editingWaiter.value = w.uuid
+  editWaiterForm.value = {
+    name: w.name,
+    phone: w.phone || '',
+    commission_pct: w.commission_pct != null ? w.commission_pct : '',
+    pin: '' // Do not pre-fill PIN, leave blank for security unless they want to change
+  }
+}
+
+async function doSaveEditWaiter(w) {
+  if (!editWaiterForm.value.name.trim()) {
+    toast.warning('Nama waiter wajib diisi.')
+    return
+  }
+  waiterSaving.value = true
+  try {
+    const payload = {
+      name: editWaiterForm.value.name.trim(),
+      phone: editWaiterForm.value.phone || null,
+      commission_pct: editWaiterForm.value.commission_pct !== '' ? parseFloat(editWaiterForm.value.commission_pct) : null
+    }
+    if (editWaiterForm.value.pin) {
+      payload.pin = editWaiterForm.value.pin
+    }
+    
+    await updateWaiter(w.uuid, payload)
+    toast.success('Waiter berhasil diperbarui!')
+    editingWaiter.value = null
+    await loadWaiters()
+  } catch (e) {
+    toast.error('Gagal update waiter: ' + (e.response?.data?.error || e.message))
+  } finally {
+    waiterSaving.value = false
+  }
+}
+
+async function doToggleWaiter(w) {
+  try {
+    await updateWaiter(w.uuid, { is_active: !w.is_active })
+    w.is_active = !w.is_active
+    toast.success(w.is_active ? `${w.name} diaktifkan` : `${w.name} dinonaktifkan`)
+  } catch (e) {
+    toast.error('Gagal mengubah status waiter.')
+  }
+}
+
+async function doDeleteWaiter(w) {
+  if (!confirm(`Hapus waiter "${w.name}"? Data komisi waiter ini di pesanan sebelumnya tidak akan terpengaruh.`)) return
+  try {
+    await deleteWaiter(w.uuid)
+    toast.success(`Waiter ${w.name} berhasil dihapus.`)
+    await loadWaiters()
+  } catch (e) {
+    toast.error('Gagal menghapus waiter: ' + (e.response?.data?.error || e.message))
+  }
+}
 </script>

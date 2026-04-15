@@ -101,8 +101,8 @@ export const useAuthStore = defineStore('auth', () => {
 
     function startSessionTimer() {
         stopSessionTimer()
-        timeoutId = setTimeout(() => {
-            if (isAuthenticated.value) { logout(); window.location.href = '/login?timeout=1' }
+        timeoutId = setTimeout(async () => {
+            if (isAuthenticated.value) { await logout(); window.location.href = '/login?timeout=1' }
         }, SESSION_TIMEOUT)
         const events = ['mousemove', 'keydown', 'click', 'scroll']
         events.forEach(evt => document.addEventListener(evt, resetTimer, { passive: true }))
@@ -111,8 +111,8 @@ export const useAuthStore = defineStore('auth', () => {
     function resetTimer() {
         if (!isAuthenticated.value) return
         clearTimeout(timeoutId)
-        timeoutId = setTimeout(() => {
-            if (isAuthenticated.value) { logout(); window.location.href = '/login?timeout=1' }
+        timeoutId = setTimeout(async () => {
+            if (isAuthenticated.value) { await logout(); window.location.href = '/login?timeout=1' }
         }, SESSION_TIMEOUT)
     }
 

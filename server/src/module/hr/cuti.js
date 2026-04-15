@@ -376,7 +376,7 @@ employeeLeaves.post('/', asyncHandler(async (req, res) => {
             `INSERT INTO audit_trail (action, module, description, user_id, user_name)
              VALUES ('create','hr',$1,$2,$3)`,
             [`Ajukan cuti: ${number} (${leaveType.name}, ${total_days} hari)`, req.user.id, req.user.name]
-        ).catch(() => {});
+        );
 
         res.status(201).json({ uuid: insRes.rows[0].uuid, number: insRes.rows[0].number });
     } catch (err) {

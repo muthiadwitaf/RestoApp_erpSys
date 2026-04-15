@@ -50,18 +50,28 @@ router.post('/', requirePermission('sales:create'), asyncHandler(async (req, res
     const number = await generateAutoNumber(branchResult.rows[0]?.code || 'JKT', 'RET');
     let total = 0;
     for (const l of (lines || [])) total += (l.qty * l.price);
-    const result = await query(
-        `INSERT INTO sales_returns (number, date, so_id, customer_id, branch_id, reason, total, status, created_by)
-     VALUES ($1,CURRENT_DATE,$2,$3,$4,$5,$6,'draft',$7) RETURNING id, uuid, number`,
-        [number, rSo || null, rCustomer, rBranch, reason, total, req.user.name]
-    );
-    for (const l of (lines || [])) {
-        const rItem = await resolveUUID(l.item_id, 'items', query);
-        await query(`INSERT INTO sales_return_lines (return_id, item_id, qty, uom, price) VALUES ($1,$2,$3,$4,$5)`, [result.rows[0].id, rItem, l.qty, l.uom, l.price]);
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
+        const result = await client.query(
+            `INSERT INTO sales_returns (number, date, so_id, customer_id, branch_id, reason, total, status, created_by)
+         VALUES ($1,CURRENT_DATE,$2,$3,$4,$5,$6,'draft',$7) RETURNING id, uuid, number`,
+            [number, rSo || null, rCustomer, rBranch, reason, total, req.user.name]
+        );
+        for (const l of (lines || [])) {
+            const rItem = await resolveUUID(l.item_id, 'items', query);
+            await client.query(`INSERT INTO sales_return_lines (return_id, item_id, qty, uom, price) VALUES ($1,$2,$3,$4,$5)`, [result.rows[0].id, rItem, l.qty, l.uom, l.price]);
+        }
+        await client.query('COMMIT');
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','sales',$1,$2,$3,$4)`,
+            [`Buat Retur Penjualan ${number}`, req.user.id, req.user.name, rBranch]);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('create','sales',$1,$2,$3,$4)`,
-        [`Buat Retur Penjualan ${number}`, req.user.id, req.user.name, rBranch]);
-    res.status(201).json(result.rows[0]);
 }));
 
 // PUT /approve -- Manager/Admin approves, NO stock change yet
@@ -222,15 +232,26 @@ router.put('/:uuid', requirePermission('sales:edit'), asyncHandler(async (req, r
     const rCustomer = customer_id ? await resolveUUID(customer_id, 'customers', query) : null;
     let total = 0;
     for (const l of (lines || [])) total += (l.qty * l.price);
-    await query(`UPDATE sales_returns SET so_id=$1, customer_id=$2, reason=$3, total=$4, updated_at=NOW() WHERE id=$5`, [rSo, rCustomer, reason, total, retId]);
-    await query(`DELETE FROM sales_return_lines WHERE return_id = $1`, [retId]);
-    for (const l of (lines || [])) {
-        const rItem = await resolveUUID(l.item_id, 'items', query);
-        await query(`INSERT INTO sales_return_lines (return_id, item_id, qty, uom, price) VALUES ($1,$2,$3,$4,$5)`, [retId, rItem, l.qty, l.uom, l.price]);
+    
+    const client = await getClient();
+    try {
+        await client.query('BEGIN');
+        await client.query(`UPDATE sales_returns SET so_id=$1, customer_id=$2, reason=$3, total=$4, updated_at=NOW() WHERE id=$5`, [rSo, rCustomer, reason, total, retId]);
+        await client.query(`DELETE FROM sales_return_lines WHERE return_id = $1`, [retId]);
+        for (const l of (lines || [])) {
+            const rItem = await resolveUUID(l.item_id, 'items', query);
+            await client.query(`INSERT INTO sales_return_lines (return_id, item_id, qty, uom, price) VALUES ($1,$2,$3,$4,$5)`, [retId, rItem, l.qty, l.uom, l.price]);
+        }
+        await client.query('COMMIT');
+        await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('update','sales',$1,$2,$3,$4)`,
+            [`Edit Retur Penjualan ${number}`, req.user.id, req.user.name, branch_id]);
+        res.json({ message: 'Return updated' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
     }
-    await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name, branch_id) VALUES ('update','sales',$1,$2,$3,$4)`,
-        [`Edit Retur Penjualan ${number}`, req.user.id, req.user.name, branch_id]);
-    res.json({ message: 'Return updated' });
 }));
 
 module.exports = router;

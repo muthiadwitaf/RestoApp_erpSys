@@ -164,7 +164,7 @@ router.put(
                 'Update posisi aset: ' + req.params.uuid,
                 req.user.id, req.user.name, req.user.branch_id
             ]
-        ).catch(() => {});
+        );
 
         res.json({ message: 'Posisi aset berhasil diperbarui' });
     })

@@ -21,6 +21,15 @@ router.get('/', requirePermission('inventory:view', 'pos:view', 'accounting:view
     let values = [companyId];
     let idx = 2;
 
+    const page = parseInt(req.query.page);
+    const limit = parseInt(req.query.limit);
+    let paginationSql = '';
+    if (page && limit) {
+        const offset = (page - 1) * limit;
+        paginationSql = ` LIMIT $${idx++} OFFSET $${idx++}`;
+        values.push(limit, offset);
+    }
+
     if (category_id) { where.push(`i.category_id = $${idx++}`); values.push(category_id); }
     if (barcode) { where.push(`i.barcode = $${idx++}`); values.push(barcode); }
     if (search) { where.push(`(i.name ILIKE $${idx} OR i.code ILIKE $${idx} OR i.barcode ILIKE $${idx})`); values.push(`%${search}%`); idx++; }
@@ -52,7 +61,7 @@ router.get('/', requirePermission('inventory:view', 'pos:view', 'accounting:view
      LEFT JOIN item_price_tiers pt ON pt.item_id = i.id
      ${whereClause}
      GROUP BY i.id, su.uuid, su.name, bu.uuid, bu.name, c.name
-     ORDER BY i.id`, values
+     ORDER BY i.id${paginationSql}`, values
     );
     res.json(result.rows);
 }));
@@ -150,7 +159,7 @@ router.post('/', requirePermission('inventory:create', 'purchasing:create'), asy
 
     res.status(201).json({ uuid: result.rows[0].uuid, code: result.rows[0].code, name: result.rows[0].name });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('create','inventory',$1,$2,$3)`,
-        [`Tambah barang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]).catch(() => { });
+        [`Tambah barang: ${result.rows[0].code} - ${result.rows[0].name}`, req.user.id, req.user.name]);
 }));
 
 // PUT /api/inventory/items/:uuid
@@ -193,7 +202,7 @@ router.put('/:uuid', requirePermission('inventory:edit', 'purchasing:edit'), val
 
     res.json({ message: 'Item berhasil diupdate' });
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('update','inventory',$1,$2,$3)`,
-        [`Update barang: ${name || req.params.uuid}`, req.user.id, req.user.name]).catch(() => { });
+        [`Update barang: ${name || req.params.uuid}`, req.user.id, req.user.name]);
 }));
 
 // DELETE /api/inventory/items/:uuid (soft delete — nonaktifkan)
@@ -203,7 +212,7 @@ router.delete('/:uuid', requirePermission('inventory:delete', 'purchasing:delete
     const { name, code } = existing.rows[0];
     await query(`UPDATE items SET is_active = false, updated_at = NOW() WHERE uuid = $1`, [req.params.uuid]);
     await query(`INSERT INTO audit_trail (action, module, description, user_id, user_name) VALUES ('delete','inventory',$1,$2,$3)`,
-        [`Nonaktifkan barang: ${code} - ${name}`, req.user.id, req.user.name]).catch(() => { });
+        [`Nonaktifkan barang: ${code} - ${name}`, req.user.id, req.user.name]);
     res.json({ message: 'Item dinonaktifkan' });
 }));
 
