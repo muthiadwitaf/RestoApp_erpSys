@@ -16,7 +16,8 @@ router.get('/', requirePermission('pos:view'), asyncHandler(async (req, res) => 
     if (available !== undefined) { where.push(`is_available = $${idx++}`); values.push(available === 'true'); }
 
     const result = await query(
-        `SELECT uuid, category, name, description, price, image_url, is_available, sort_order, created_at
+        `SELECT uuid, category, name, description, price, image_url, is_available, sort_order,
+                labor_cost, overhead_cost, recipe_cost, cogs, created_at
          FROM resto_menu_items WHERE ${where.join(' AND ')}
          ORDER BY sort_order, category, name`,
         values
@@ -37,16 +38,19 @@ router.get('/categories', requirePermission('pos:view'), asyncHandler(async (req
 // POST /api/resto/menu — create menu item
 router.post('/', requirePermission('pos:view'), asyncHandler(async (req, res) => {
     const companyId = req.user.company_id;
-    const { name, description, category, price, image_url, is_available, sort_order } = req.body;
+    const { name, description, category, price, image_url, is_available, sort_order, labor_cost, overhead_cost } = req.body;
     if (!name) return res.status(400).json({ error: 'Nama menu wajib diisi' });
     if (!price && price !== 0) return res.status(400).json({ error: 'Harga wajib diisi' });
 
+    const l_cost = parseFloat(labor_cost) || 0;
+    const o_cost = parseFloat(overhead_cost) || 0;
+
     const result = await query(
-        `INSERT INTO resto_menu_items (company_id, name, description, category, price, image_url, is_available, sort_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         RETURNING uuid, name, description, category, price, image_url, is_available, sort_order`,
+        `INSERT INTO resto_menu_items (company_id, name, description, category, price, image_url, is_available, sort_order, labor_cost, overhead_cost, cogs)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         RETURNING uuid, name, description, category, price, image_url, is_available, sort_order, labor_cost, overhead_cost, recipe_cost, cogs`,
         [companyId, name, description || null, category || 'Umum', price, image_url || null,
-         is_available !== undefined ? is_available : true, sort_order || 0]
+         is_available !== undefined ? is_available : true, sort_order || 0, l_cost, o_cost, (l_cost + o_cost)]
     );
     res.status(201).json(result.rows[0]);
 }));
@@ -54,17 +58,37 @@ router.post('/', requirePermission('pos:view'), asyncHandler(async (req, res) =>
 // PUT /api/resto/menu/:uuid — update menu item
 router.put('/:uuid', requirePermission('pos:view'), asyncHandler(async (req, res) => {
     const companyId = req.user.company_id;
-    const { name, description, category, price, image_url, is_available, sort_order } = req.body;
+    const { name, description, category, price, image_url, is_available, sort_order, labor_cost, overhead_cost } = req.body;
 
+    const sets = [];
+    const values = [];
+    let idx = 1;
+
+    if (name !== undefined) { sets.push(`name=$${idx++}`); values.push(name); }
+    if (description !== undefined) { sets.push(`description=$${idx++}`); values.push(description); }
+    if (category !== undefined) { sets.push(`category=$${idx++}`); values.push(category); }
+    if (price !== undefined) { sets.push(`price=$${idx++}`); values.push(price); }
+    if (image_url !== undefined) { sets.push(`image_url=$${idx++}`); values.push(image_url); }
+    if (is_available !== undefined) { sets.push(`is_available=$${idx++}`); values.push(is_available); }
+    if (sort_order !== undefined) { sets.push(`sort_order=$${idx++}`); values.push(sort_order); }
+    
+    if (labor_cost !== undefined || overhead_cost !== undefined) {
+        if (labor_cost !== undefined) { sets.push(`labor_cost=$${idx++}`); values.push(parseFloat(labor_cost) || 0); }
+        if (overhead_cost !== undefined) { sets.push(`overhead_cost=$${idx++}`); values.push(parseFloat(overhead_cost) || 0); }
+        // Update COGS (formula: BBB + BTK + BOP)
+        sets.push(`cogs = recipe_cost + COALESCE(labor_cost,0) + COALESCE(overhead_cost,0)`);
+    }
+
+    if (sets.length === 0) return res.json({ message: 'Tidak ada perubahan' });
+
+    sets.push(`updated_at=NOW()`);
+    values.push(req.params.uuid, companyId);
+    
     const result = await query(
-        `UPDATE resto_menu_items SET
-            name=COALESCE($1,name), description=COALESCE($2,description),
-            category=COALESCE($3,category), price=COALESCE($4,price),
-            image_url=COALESCE($5,image_url), is_available=COALESCE($6,is_available),
-            sort_order=COALESCE($7,sort_order), updated_at=NOW()
-         WHERE uuid=$8 AND company_id=$9
-         RETURNING uuid, name, description, category, price, image_url, is_available, sort_order`,
-        [name, description, category, price, image_url, is_available, sort_order, req.params.uuid, companyId]
+        `UPDATE resto_menu_items SET ${sets.join(', ')}
+         WHERE uuid=$${idx++} AND company_id=$${idx}
+         RETURNING uuid, name, description, category, price, image_url, is_available, sort_order, labor_cost, overhead_cost, recipe_cost, cogs`,
+        values
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Menu tidak ditemukan' });
     res.json(result.rows[0]);

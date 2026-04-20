@@ -1,8 +1,10 @@
 const router = require('express').Router();
+const bcrypt = require('bcrypt');
 const { query, getClient } = require('../../config/db');
 const { authenticateToken, requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
+const logger = require('../../utils/logger');
 
 router.use(authenticateToken);
 
@@ -29,7 +31,8 @@ router.use(authenticateToken);
             created_at TIMESTAMPTZ DEFAULT NOW(),
             updated_at TIMESTAMPTZ DEFAULT NOW()
         )`);
-        await query(`ALTER TABLE resto_waiters ADD COLUMN IF NOT EXISTS pin VARCHAR(10)`);
+        await query(`ALTER TABLE resto_waiters ADD COLUMN IF NOT EXISTS pin VARCHAR(255)`);
+        try { await query(`ALTER TABLE resto_waiters ALTER COLUMN pin TYPE VARCHAR(255)`); } catch (e) {}
 
         // ── Create resto_waiter_attendance table ──
         await query(`CREATE TABLE IF NOT EXISTS resto_waiter_attendance (
@@ -72,11 +75,14 @@ router.post('/waiters', requirePermission('pos:view'), asyncHandler(async (req, 
     const { name, phone, commission_pct, pin } = req.body;
     if (!name || !name.trim()) return res.status(400).json({ error: 'Nama waiter wajib diisi' });
 
+    // Hash PIN if provided
+    const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
+
     const result = await query(
         `INSERT INTO resto_waiters (company_id, name, phone, commission_pct, pin)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING uuid, name, phone, commission_pct, is_active, created_at, (pin IS NOT NULL AND pin != '') AS has_pin`,
-        [companyId, name.trim(), phone || null, commission_pct != null ? parseFloat(commission_pct) : null, pin || null]
+        [companyId, name.trim(), phone || null, commission_pct != null ? parseFloat(commission_pct) : null, hashedPin]
     );
     res.status(201).json(result.rows[0]);
 }));
@@ -94,7 +100,10 @@ router.put('/waiters/:uuid', requirePermission('pos:view'), asyncHandler(async (
     if (phone !== undefined) { sets.push(`phone = $${idx++}`); values.push(phone || null); }
     if (commission_pct !== undefined) { sets.push(`commission_pct = $${idx++}`); values.push(commission_pct != null ? parseFloat(commission_pct) : null); }
     if (is_active !== undefined) { sets.push(`is_active = $${idx++}`); values.push(Boolean(is_active)); }
-    if (pin !== undefined) { sets.push(`pin = $${idx++}`); values.push(pin || null); }
+    if (pin !== undefined) {
+        const hashedPin = pin ? await bcrypt.hash(pin, 10) : null;
+        sets.push(`pin = $${idx++}`); values.push(hashedPin);
+    }
 
     if (sets.length === 0) return res.json({ message: 'Tidak ada perubahan.' });
 
@@ -156,8 +165,9 @@ router.post('/waiters/clock-in', requirePermission('pos:view'), asyncHandler(asy
     if (wRes.rows.length === 0) return res.status(404).json({ error: 'Waiter tidak ditemukan' });
     
     const waiter = wRes.rows[0];
-    if (waiter.pin && waiter.pin !== pin) {
-        return res.status(401).json({ error: 'PIN tidak sesuai' });
+    if (waiter.pin) {
+        const pinValid = await bcrypt.compare(pin || '', waiter.pin);
+        if (!pinValid) return res.status(401).json({ error: 'PIN tidak sesuai' });
     }
 
     const today = new Date().toLocaleDateString('sv-SE');
@@ -193,8 +203,9 @@ router.post('/waiters/clock-out', requirePermission('pos:view'), asyncHandler(as
     if (wRes.rows.length === 0) return res.status(404).json({ error: 'Waiter tidak ditemukan' });
     
     const waiter = wRes.rows[0];
-    if (waiter.pin && waiter.pin !== pin) {
-        return res.status(401).json({ error: 'PIN tidak sesuai' });
+    if (waiter.pin) {
+        const pinValid = await bcrypt.compare(pin || '', waiter.pin);
+        if (!pinValid) return res.status(401).json({ error: 'PIN tidak sesuai' });
     }
 
     const today = new Date().toLocaleDateString('sv-SE');
@@ -365,13 +376,18 @@ router.post('/', requirePermission('pos:view'), asyncHandler(async (req, res) =>
                     [orderId, itemIntId, item.item_name || itemData.name || item.name, item.qty || 1, item.price || 0, itemSubtotal, item.notes || null]
                 );
 
-                // Deduct Inventory
+                // Deduct Inventory via Recipe
                 if (warehouseId && itemIntId) {
-                    await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [item.qty, itemIntId, warehouseId]);
-                    await client.query(
-                        `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, 'out', $2, $3, $4, $5)`,
-                        [itemIntId, item.qty, orderNumber, warehouseId, `Pesanan Resto ${orderNumber} (Confirmed)`]
-                    );
+                    const recipes = await client.query(`SELECT item_id, qty FROM menu_recipes WHERE menu_item_id = $1`, [itemIntId]);
+                    for (const recipe of recipes.rows) {
+                        const rawItemId = recipe.item_id;
+                        const usedQty = parseFloat(recipe.qty) * (parseFloat(item.qty) || 1);
+                        await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [usedQty, rawItemId, warehouseId]);
+                        await client.query(
+                            `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, 'out', $2, $3, $4, $5)`,
+                            [rawItemId, usedQty, orderNumber, warehouseId, `Pesanan Resto ${orderNumber} (Confirmed)`]
+                        );
+                    }
                 }
             }
             await recalcOrderTotal(client, orderId);
@@ -474,11 +490,18 @@ router.put('/:uuid/items', requirePermission('pos:view'), asyncHandler(async (re
                 );
 
                 if (warehouseId && itemIntId && diff !== 0) {
-                    await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [diff, itemIntId, warehouseId]);
-                    await client.query(
-                        `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6)`,
-                        [itemIntId, diff > 0 ? 'out' : 'in', Math.abs(diff), orderNumber, warehouseId, `Revisi Pesanan ${orderNumber}`]
-                    );
+                    const type = diff > 0 ? 'out' : 'in';
+                    const desc = `Revisi Pesanan ${orderNumber}`;
+                    const recipes = await client.query(`SELECT item_id, qty FROM menu_recipes WHERE menu_item_id = $1`, [itemIntId]);
+                    for (const recipe of recipes.rows) {
+                        const rawItemId = recipe.item_id;
+                        const usedQty = parseFloat(recipe.qty) * diff;
+                        await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [usedQty, rawItemId, warehouseId]);
+                        await client.query(
+                            `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, $2, $3, $4, $5, $6)`,
+                            [rawItemId, type, Math.abs(usedQty), orderNumber, warehouseId, desc]
+                        );
+                    }
                 }
             } else {
                 await client.query(
@@ -488,11 +511,16 @@ router.put('/:uuid/items', requirePermission('pos:view'), asyncHandler(async (re
                 );
 
                 if (warehouseId && itemIntId) {
-                    await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [item.qty, itemIntId, warehouseId]);
-                    await client.query(
-                        `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, 'out', $2, $3, $4, $5)`,
-                        [itemIntId, item.qty, orderNumber, warehouseId, `Tambahan Pesanan ${orderNumber}`]
-                    );
+                    const recipes = await client.query(`SELECT item_id, qty FROM menu_recipes WHERE menu_item_id = $1`, [itemIntId]);
+                    for (const recipe of recipes.rows) {
+                        const rawItemId = recipe.item_id;
+                        const usedQty = parseFloat(recipe.qty) * (parseFloat(item.qty) || 1);
+                        await client.query(`UPDATE inventory SET qty = qty - $1, updated_at=NOW() WHERE item_id = $2 AND warehouse_id = $3`, [usedQty, rawItemId, warehouseId]);
+                        await client.query(
+                            `INSERT INTO stock_movements (item_id, date, type, qty, ref, warehouse_id, description) VALUES ($1, CURRENT_DATE, 'out', $2, $3, $4, $5)`,
+                            [rawItemId, usedQty, orderNumber, warehouseId, `Tambahan Pesanan ${orderNumber}`]
+                        );
+                    }
                 }
             }
         }
@@ -742,8 +770,8 @@ router.put('/:uuid/checkout', requirePermission('pos:view'), asyncHandler(async 
         res.json(result.rows[0]);
     } catch (e) {
         await client.query('ROLLBACK');
-        console.error("Checkout Error:", e);
-        res.status(500).json({ error: 'Gagal memproses pembayaran: ' + e.message });
+        logger.error({ err: e, orderId: req.params.uuid }, 'Checkout failed');
+        res.status(500).json({ error: 'Gagal memproses pembayaran. Silakan coba lagi atau hubungi admin.' });
     } finally {
         client.release();
     }
@@ -902,8 +930,8 @@ router.delete('/:uuid', requirePermission('pos:view'), asyncHandler(async (req, 
         res.json({ message: order.status === 'paid' ? 'Pesanan berhasil di-refund dan dibatalkan' : 'Pesanan dibatalkan' });
     } catch (e) {
         await client.query('ROLLBACK');
-        console.error("Refund/Void Error:", e);
-        res.status(500).json({ error: 'Gagal membatalkan pesanan: ' + e.message });
+        logger.error({ err: e, orderId: req.params.uuid }, 'Refund/Void failed');
+        res.status(500).json({ error: 'Gagal membatalkan pesanan. Silakan coba lagi atau hubungi admin.' });
     } finally {
         client.release();
     }
@@ -984,8 +1012,8 @@ router.put('/:uuid/move-table', requirePermission('pos:view'), asyncHandler(asyn
         });
     } catch (e) {
         await client.query('ROLLBACK');
-        console.error('Move table error:', e);
-        res.status(500).json({ error: 'Gagal memindahkan meja: ' + e.message });
+        logger.error({ err: e, orderId: req.params.uuid }, 'Move table failed');
+        res.status(500).json({ error: 'Gagal memindahkan meja. Silakan coba lagi atau hubungi admin.' });
     } finally {
         client.release();
     }

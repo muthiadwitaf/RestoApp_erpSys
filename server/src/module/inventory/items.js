@@ -43,7 +43,7 @@ router.get('/', requirePermission('inventory:view', 'pos:view', 'accounting:view
 
     const result = await query(
         `SELECT i.uuid, i.code, i.barcode, i.name, i.buy_price, i.sell_price, i.hpp,
-       i.min_stock, i.conversion_factor, i.min_sell_qty, i.is_active,
+       i.min_stock, i.conversion_factor, i.min_sell_qty, i.is_active, i.item_type,
        i.image_id, i.image_company_uuid, i.image_size_bytes,
        CASE WHEN i.image_id IS NOT NULL
             THEN '/uploadedImage/' || i.image_company_uuid || '/' || i.image_id || '.webp'
@@ -70,7 +70,7 @@ router.get('/', requirePermission('inventory:view', 'pos:view', 'accounting:view
 router.get('/:uuid', requirePermission('inventory:view', 'purchasing:view'), validateUUID(), asyncHandler(async (req, res) => {
     const result = await query(
         `SELECT i.uuid, i.code, i.barcode, i.name, i.buy_price, i.sell_price, i.hpp,
-       i.min_stock, i.conversion_factor, i.min_sell_qty, i.is_active,
+       i.min_stock, i.conversion_factor, i.min_sell_qty, i.is_active, i.item_type,
        i.image_id, i.image_company_uuid, i.image_size_bytes,
        CASE WHEN i.image_id IS NOT NULL
             THEN '/uploadedImage/' || i.image_company_uuid || '/' || i.image_id || '.webp'
@@ -135,7 +135,7 @@ async function resolveCategoryId(val) {
 // POST /api/inventory/items
 router.post('/', requirePermission('inventory:create', 'purchasing:create'), asyncHandler(async (req, res) => {
     const { code, barcode, name, small_uom_id, big_uom_id, conversion_factor,
-        min_stock, category_id, min_sell_qty,
+        min_stock, category_id, min_sell_qty, item_type,
         image_id, image_company_uuid, image_size_bytes } = req.body;
     if (!code || !name) return res.status(400).json({ error: 'Kode dan nama item wajib diisi' });
 
@@ -149,12 +149,12 @@ router.post('/', requirePermission('inventory:create', 'purchasing:create'), asy
     const result = await query(
         `INSERT INTO items (code, barcode, name, small_uom_id, big_uom_id, conversion_factor,
          hpp, min_stock, category_id, min_sell_qty, company_id,
-         image_id, image_company_uuid, image_size_bytes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id, uuid, code, name`,
+         image_id, image_company_uuid, image_size_bytes, item_type)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id, uuid, code, name`,
         [code.trim(), barcode?.trim() || null, name.trim(), smallUomIntId || null, bigUomIntId || null,
         conversion_factor || 1, 0, min_stock || 0,
         categoryIntId || null, min_sell_qty || 1, req.user.company_id,
-        image_id || null, image_company_uuid || null, image_size_bytes || null]
+        image_id || null, image_company_uuid || null, image_size_bytes || null, item_type || 'raw_material']
     );
 
     res.status(201).json({ uuid: result.rows[0].uuid, code: result.rows[0].code, name: result.rows[0].name });
@@ -171,7 +171,7 @@ router.put('/:uuid', requirePermission('inventory:edit', 'purchasing:edit'), val
     const { id: itemId, image_id: oldImageId, image_company_uuid: oldImageCompanyUuid } = itemResult.rows[0];
 
     const { name, barcode, small_uom_id, big_uom_id, conversion_factor,
-        min_stock, category_id, min_sell_qty, is_active,
+        min_stock, category_id, min_sell_qty, is_active, item_type,
         image_id, image_company_uuid, image_size_bytes } = req.body;
 
     const smallUomIntId = small_uom_id !== undefined ? await resolveUnitId(small_uom_id) : undefined;
@@ -185,14 +185,14 @@ router.put('/:uuid', requirePermission('inventory:edit', 'purchasing:edit'), val
          conversion_factor=COALESCE($5,conversion_factor),
          min_stock=COALESCE($6,min_stock), category_id=COALESCE($7,category_id),
          min_sell_qty=COALESCE($8,min_sell_qty), is_active=COALESCE($9,is_active),
-         image_id=$10, image_company_uuid=$11, image_size_bytes=$12,
-         updated_at=NOW() WHERE id=$13`,
+         image_id=$10, image_company_uuid=$11, image_size_bytes=$12, item_type=COALESCE($13, item_type),
+         updated_at=NOW() WHERE id=$14`,
         [name?.trim(), barcode?.trim() || null, smallUomIntId, bigUomIntId, conversion_factor,
             min_stock, categoryIntId, min_sell_qty, is_active,
         image_id !== undefined ? (image_id || null) : oldImageId,
         image_company_uuid !== undefined ? (image_company_uuid || null) : oldImageCompanyUuid,
         image_size_bytes !== undefined ? (image_size_bytes || null) : null,
-            itemId]
+            item_type, itemId]
     );
 
     // If image changed, delete old file from disk

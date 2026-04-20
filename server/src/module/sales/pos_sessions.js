@@ -127,8 +127,9 @@ router.post('/open', requirePermission('pos:view'), asyncHandler(async (req, res
 
         res.status(201).json(session);
     } catch (e) {
-        console.error("pos_sessions open DB Error: ", e);
-        res.status(500).json({ error: "Gagal membuka sesi kasir: " + e.message });
+        const logger = require('../../utils/logger');
+        logger.error({ err: e }, 'pos_sessions open failed');
+        res.status(500).json({ error: 'Gagal membuka sesi kasir. Silakan coba lagi atau hubungi admin.' });
     }
 }));
 

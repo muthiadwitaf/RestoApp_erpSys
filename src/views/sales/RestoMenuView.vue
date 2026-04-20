@@ -70,6 +70,9 @@
               <span class="rm-card-price">Rp {{ formatMoney(item.price) }}</span>
             </div>
             <div class="rm-card-actions">
+              <button class="btn btn-sm btn-outline-info" @click.stop="openRecipeManager(item)" title="Kelola Resep">
+                <i class="bi bi-diagram-3-fill"></i>
+              </button>
               <button class="btn btn-sm btn-outline-primary" @click.stop="openEditItem(item)" title="Edit">
                 <i class="bi bi-pencil"></i>
               </button>
@@ -97,7 +100,7 @@
                 <th>Kategori</th>
                 <th class="text-end">Harga</th>
                 <th class="text-center">Status</th>
-                <th class="text-end" style="width:120px">Aksi</th>
+                <th class="text-end" style="width:140px">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -114,11 +117,12 @@
                   </span>
                 </td>
                 <td class="text-end">
-                  <button class="btn btn-sm btn-link text-primary p-0 me-2" @click="openEditItem(item)"><i class="bi bi-pencil"></i></button>
-                  <button class="btn btn-sm btn-link p-0 me-2" :class="item.is_available ? 'text-warning' : 'text-success'" @click="toggleAvail(item)">
+                  <button class="btn btn-sm btn-link text-info p-0 me-2" @click="openRecipeManager(item)" title="Kelola Resep"><i class="bi bi-diagram-3-fill"></i></button>
+                  <button class="btn btn-sm btn-link text-primary p-0 me-2" @click="openEditItem(item)" title="Edit"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-sm btn-link p-0 me-2" :class="item.is_available ? 'text-warning' : 'text-success'" @click="toggleAvail(item)" title="Ubah Status">
                     <i class="bi" :class="item.is_available ? 'bi-pause-circle' : 'bi-play-circle'"></i>
                   </button>
-                  <button class="btn btn-sm btn-link text-danger p-0" @click="deleteItem(item)"><i class="bi bi-trash3"></i></button>
+                  <button class="btn btn-sm btn-link text-danger p-0" @click="deleteItem(item)" title="Hapus"><i class="bi bi-trash3"></i></button>
                 </td>
               </tr>
               <tr v-if="filteredItems.length === 0 && !loading">
@@ -218,6 +222,9 @@
       </div>
     </div>
 
+    <!-- ═══ Recipe Manager Modal ═══ -->
+    <RecipeManagerModal :show="showRecipeModal" :menuItem="recipeMenuItem" @close="showRecipeModal = false" @updated="refreshMenu" />
+
     <div v-if="loading" class="rm-loading"><div class="spinner-border text-primary"></div></div>
   </div>
 </template>
@@ -225,6 +232,7 @@
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import { getRestoMenu, createRestoMenuItem, updateRestoMenuItem, deleteRestoMenuItem } from '@/services/sales/restoApi'
+import RecipeManagerModal from '@/components/resto/RecipeManagerModal.vue'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -236,6 +244,10 @@ const viewMode = ref('grid')
 // Item form
 const showItemModal = ref(false)
 const itemForm = ref({ uuid: null, name: '', description: '', price: 0, category: 'Umum', sort_order: 0, is_available: true, image_url: null })
+
+// Recipe Manager
+const showRecipeModal = ref(false)
+const recipeMenuItem = ref(null)
 
 // Category
 const showAddCategory = ref(false)
@@ -285,6 +297,11 @@ function openAddItem() {
 function openEditItem(item) {
   itemForm.value = { ...item, image_url: item.image_url || null }
   showItemModal.value = true
+}
+
+function openRecipeManager(item) {
+  recipeMenuItem.value = item
+  showRecipeModal.value = true
 }
 
 function onImageSelected(e) {

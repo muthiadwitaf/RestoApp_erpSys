@@ -36,6 +36,26 @@ const routes = [
             // Standard POS Configs (Now under /resto)
             { path: 'resto/history', name: 'RestoHistory', component: () => import('@/views/sales/PosHistoryView.vue'), meta: { permission: 'pos:view' } },
 
+            // Inventory Module
+            { path: 'inventory/items', name: 'InventoryItems', component: () => import('@/views/inventory/InventoryItemsView.vue'), meta: { permission: 'inventory:view' } },
+            { path: 'inventory/stock', name: 'InventoryStock', component: () => import('@/views/inventory/InventoryStockView.vue'), meta: { permission: 'inventory:view' } },
+            { path: 'inventory/opname', name: 'InventoryOpname', component: () => import('@/views/inventory/InventoryOpnameView.vue'), meta: { permission: 'inventory:manage' } },
+
+            // Purchasing Module
+            { path: 'purchasing/suppliers', name: 'PurchasingSuppliers', component: () => import('@/views/purchasing/PurchasingSuppliersView.vue'), meta: { permission: 'purchasing:view' } },
+            { path: 'purchasing/orders', name: 'PurchasingOrders', component: () => import('@/views/purchasing/PurchasingOrdersView.vue'), meta: { permission: 'purchasing:view' } },
+            { path: 'purchasing/bills', name: 'PurchasingBills', component: () => import('@/views/purchasing/PurchasingBillsView.vue'), meta: { permission: 'purchasing:view' } },
+
+            // Accounting Module
+            { path: 'accounting/coa', name: 'AccountingCoa', component: () => import('@/views/accounting/AccountingCoaView.vue'), meta: { permission: 'accounting:view' } },
+            { path: 'accounting/journals', name: 'AccountingJournals', component: () => import('@/views/accounting/AccountingJournalsView.vue'), meta: { permission: 'accounting:view' } },
+            { path: 'accounting/reports', name: 'AccountingReports', component: () => import('@/views/accounting/AccountingReportsView.vue'), meta: { permission: 'accounting:view' } },
+
+            // HR & Payroll Module
+            { path: 'hr/employees', name: 'HrEmployees', component: () => import('@/views/hr/HrEmployeesView.vue'), meta: { permission: 'hr:view' } },
+            { path: 'hr/attendance', name: 'HrAttendance', component: () => import('@/views/hr/HrAttendanceView.vue'), meta: { permission: 'hr:view' } },
+            { path: 'hr/payroll', name: 'HrPayroll', component: () => import('@/views/hr/HrPayrollView.vue'), meta: { permission: 'hr:view' } },
+
             // 403
             { path: 'forbidden', name: 'Forbidden', component: () => import('@/views/ForbiddenView.vue') }
         ]

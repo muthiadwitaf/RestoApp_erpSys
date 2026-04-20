@@ -42,7 +42,7 @@ const translations = {
     // Sidebar Navigation
     nav_pos: 'Kasir POS',
     nav_tables: 'Denah Meja',
-    nav_menu: 'Katalog Menu',
+    nav_menu: 'Daftar Menu',
     nav_kitchen: 'Kitchen Display',
     nav_history: 'Riwayat Transaksi Resto',
     nav_reports: 'Laporan Harian Resto',

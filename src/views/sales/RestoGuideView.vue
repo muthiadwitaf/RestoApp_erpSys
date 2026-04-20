@@ -4,7 +4,7 @@
     <div class="guide-header">
       <div class="guide-header-left">
         <h4 class="guide-title"><i class="bi bi-map text-info"></i> Alur & Panduan Aplikasi</h4>
-        <span class="badge bg-info">Smart POS Resto</span>
+        <span class="badge bg-info">Smart POS + ERP Resto</span>
       </div>
       <div class="guide-header-right">
         <router-link to="/resto/pos" class="btn btn-sm btn-primary">
@@ -16,7 +16,7 @@
     <div class="guide-body">
       <!-- ═══ Main Flow Chart ═══ -->
       <section class="guide-section">
-        <h5 class="section-title"><i class="bi bi-diagram-3"></i> Alur Utama Aplikasi</h5>
+        <h5 class="section-title"><i class="bi bi-diagram-3"></i> Alur Transaksi POS</h5>
         <div class="flow-chart">
           <!-- Row 1: Login -->
           <div class="flow-row">
@@ -112,29 +112,42 @@
         </div>
       </section>
 
-      <!-- ═══ Feature Cards ═══ -->
-      <section class="guide-section">
-        <h5 class="section-title"><i class="bi bi-grid-1x2"></i> Fitur-Fitur Utama</h5>
+      <!-- ═══ Modul ERP ═══ -->
+      <section class="guide-section mt-5 border-top pt-5">
+        <h5 class="section-title text-success"><i class="bi bi-buildings text-success"></i> Panduan Modul Back-Office (ERP)</h5>
+        <div class="feature-grid">
+          <div class="feature-card" @click="activeStep = 'erp-hr'">
+            <div class="feature-icon bg-info"><i class="bi bi-people"></i></div>
+            <h6>HR & Payroll</h6>
+            <p>Manajemen karyawan, absensi Waiter via PIN otomatis, penggajian (Slip Gaji), potongan, dan komisi.</p>
+          </div>
+          <div class="feature-card" @click="activeStep = 'erp-inv'">
+            <div class="feature-icon bg-success"><i class="bi bi-box-seam"></i></div>
+            <h6>Inventory</h6>
+            <p>Manajemen data barang, bahan baku, stok opname, mutasi gudang Pusat & Cabang secara realtime.</p>
+          </div>
+          <div class="feature-card" @click="activeStep = 'erp-purchasing'">
+            <div class="feature-icon bg-primary"><i class="bi bi-cart4"></i></div>
+            <h6>Purchasing (PO & Bill)</h6>
+            <p>Pemesanan barang ke Supplier (Purchase Order), tagihan bayar (Bills), dan pelunasan bertahap.</p>
+          </div>
+          <div class="feature-card" @click="activeStep = 'erp-accounting'">
+            <div class="feature-icon bg-warning text-dark"><i class="bi bi-journal-check"></i></div>
+            <h6>Accounting</h6>
+            <p>Pencatatan Buku Besar otomatis (Chart of Accounts), pembuatan Jurnal, dan Laporan Keuangan.</p>
+          </div>
+        </div>
+        <p class="text-muted mt-3 small"><i>*Klik kartu modul di atas untuk melihat alur kerja dari setiap modul Back-Office.</i></p>
+      </section>
+
+      <!-- ═══ Fitur Tambahan ═══ -->
+      <section class="guide-section mt-4">
+        <h5 class="section-title"><i class="bi bi-grid-1x2"></i> Fitur POS Tambahan</h5>
         <div class="feature-grid">
           <div class="feature-card" @click="activeStep = 'pindah-meja'">
-            <div class="feature-icon bg-info"><i class="bi bi-arrow-left-right"></i></div>
+            <div class="feature-icon" style="background:#475569"><i class="bi bi-arrow-left-right"></i></div>
             <h6>Pindah Meja</h6>
             <p>Pindahkan pesanan aktif ke meja lain yang kosong</p>
-          </div>
-          <div class="feature-card" @click="activeStep = 'tambah-menu'">
-            <div class="feature-icon bg-success"><i class="bi bi-journal-richtext"></i></div>
-            <h6>Katalog Menu</h6>
-            <p>Kelola daftar menu: tambah, edit, hapus, dan tandai stok habis</p>
-          </div>
-          <div class="feature-card" @click="activeStep = 'pilih-meja'">
-            <div class="feature-icon bg-primary"><i class="bi bi-grid-3x3-gap-fill"></i></div>
-            <h6>Denah Meja</h6>
-            <p>Layout visual meja dengan drag-and-drop editor</p>
-          </div>
-          <div class="feature-card" @click="activeStep = 'kitchen'">
-            <div class="feature-icon bg-warning text-dark"><i class="bi bi-fire"></i></div>
-            <h6>Kitchen Display</h6>
-            <p>Layar dapur realtime dengan notifikasi suara & timer urgensi</p>
           </div>
           <div class="feature-card" @click="activeStep = 'tutup-kasir'">
             <div class="feature-icon bg-danger"><i class="bi bi-lock"></i></div>
@@ -170,40 +183,6 @@
           </div>
         </section>
       </transition>
-
-      <!-- ═══ Daily Workflow ═══ -->
-      <section class="guide-section">
-        <h5 class="section-title"><i class="bi bi-calendar-check"></i> Alur Kerja Harian</h5>
-        <div class="daily-flow">
-          <div class="daily-phase">
-            <div class="phase-header phase-morning"><i class="bi bi-sunrise"></i> Pagi — Pembukaan</div>
-            <div class="phase-steps">
-              <div class="phase-step"><span class="step-badge">1</span> Login ke aplikasi</div>
-              <div class="phase-step"><span class="step-badge">2</span> Buka Kasir + isi nominal kas awal</div>
-              <div class="phase-step"><span class="step-badge">3</span> Cek daftar menu & ketersediaan stok</div>
-            </div>
-          </div>
-          <div class="daily-connector"><i class="bi bi-arrow-right-circle-fill"></i></div>
-          <div class="daily-phase">
-            <div class="phase-header phase-ops"><i class="bi bi-people"></i> Operasional</div>
-            <div class="phase-steps">
-              <div class="phase-step"><span class="step-badge">4</span> Pelanggan datang → Pilih meja</div>
-              <div class="phase-step"><span class="step-badge">5</span> Tambah pesanan → Kirim ke dapur</div>
-              <div class="phase-step"><span class="step-badge">6</span> Dapur memasak (Kitchen Display)</div>
-              <div class="phase-step"><span class="step-badge">7</span> Makanan siap → Sajikan</div>
-              <div class="phase-step"><span class="step-badge">8</span> Pelanggan selesai → Bayar & cetak struk</div>
-            </div>
-          </div>
-          <div class="daily-connector"><i class="bi bi-arrow-right-circle-fill"></i></div>
-          <div class="daily-phase">
-            <div class="phase-header phase-night"><i class="bi bi-moon-stars"></i> Malam — Penutupan</div>
-            <div class="phase-steps">
-              <div class="phase-step"><span class="step-badge">9</span> Klik "Tutup" → Hitung uang fisik</div>
-              <div class="phase-step"><span class="step-badge">10</span> Cek selisih kas → Tutup shift</div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   </div>
 </template>
@@ -219,7 +198,7 @@ const stepDetails = {
     steps: [
       'Buka aplikasi di browser (otomatis diarahkan ke halaman Login)',
       'Masukkan <strong>Email</strong> dan <strong>Password</strong>',
-      'Klik tombol <strong>"Masuk ke Kasir"</strong>',
+      'Klik tombol <strong>"Masuk ke Kasir"</strong> untuk Mode Kasir atau pilih Modul ERP dari bilah sebelah kiri.',
       'Jika akun terdaftar di lebih dari satu perusahaan, pilih perusahaan yang diinginkan'
     ],
     note: 'Sesi login berlaku 30 menit. Jika tidak aktif, Anda akan otomatis logout.'
@@ -227,12 +206,12 @@ const stepDetails = {
   'buka-kasir': {
     title: 'Buka Kasir (Mulai Shift)',
     steps: [
-      'Setelah login, modal <strong>"Buka Kasir"</strong> akan muncul otomatis',
-      'Masukkan nominal <strong>Uang Kas Awal</strong> (modal/deposit)',
-      'Gunakan tombol pintas (100rb, 200rb, 300rb, dll) untuk mempercepat',
-      'Klik <strong>"Buka Kasir"</strong> untuk memulai sesi kerja'
+      'Setelah login, modal <strong>"Buka Kasir"</strong> akan muncul otomatis jika Hak Akses Kasir.',
+      'Pilih <strong>Shift / Jadwal</strong> dan <strong>Waiter/Kasir Absen (jika pakai PIN)</strong>.',
+      'Masukkan nominal <strong>Uang Kas Awal</strong> (modal/deposit).',
+      'Klik <strong>"Buka Kasir"</strong> untuk memulai sesi kerja.'
     ],
-    note: 'Sesi kasir wajib dibuka sebelum bisa melakukan transaksi apapun.'
+    note: 'Sesi kasir wajib dibuka sebelum bisa melakukan transaksi apapun. Absensi otomatis ditarik ke ERP HR.'
   },
   'pilih-meja': {
     title: 'Pilih Meja',
@@ -251,8 +230,7 @@ const stepDetails = {
       'Setelah memilih meja, lihat <strong>Katalog Menu</strong> di panel kanan',
       'Klik item menu yang ingin ditambahkan → otomatis masuk ke keranjang',
       'Gunakan filter kategori (Beverage, Main Course, dll) atau cari di kolom pencarian',
-      'Atur jumlah dengan tombol <strong>+</strong> / <strong>-</strong> di panel tengah',
-      'Tambahkan catatan (misal: "tanpa sambal") jika perlu'
+      'Atur jumlah dengan tombol <strong>+</strong> / <strong>-</strong> di panel tengah'
     ],
     note: 'Menu yang sudah ditandai "Habis" oleh admin tidak akan muncul di katalog.'
   },
@@ -287,7 +265,7 @@ const stepDetails = {
       'Klik <strong>"Konfirmasi Pembayaran"</strong> untuk menyelesaikan',
       'Struk pembayaran akan muncul untuk dicetak'
     ],
-    note: 'Pastikan memilih metode pembayaran yang sesuai — data ini masuk ke laporan shift.'
+    note: 'Penjualan Otomatis masuk ke Jurnal Penjualan ERP (Accounting) jika diaktifkan.'
   },
   'struk': {
     title: 'Cetak Struk',
@@ -318,8 +296,7 @@ const stepDetails = {
       'Klik meja tujuan yang diinginkan dari daftar',
       'Klik <strong>"Pindahkan"</strong> untuk mengonfirmasi perpindahan',
       'Pesanan berpindah, meja lama menjadi Kosong, meja baru menjadi Terisi'
-    ],
-    note: 'Tombol ↔ hanya muncul setelah pesanan <strong>disimpan ke server</strong> (sudah klik "Kirim ke Dapur" atau "Simpan"). Pesanan yang sudah dibayar/dibatalkan tidak bisa dipindah.'
+    ]
   },
   'tutup-kasir': {
     title: 'Tutup Kasir (Akhir Shift)',
@@ -328,9 +305,8 @@ const stepDetails = {
       'Modal laporan shift muncul: kasir, waktu, jumlah transaksi, kas masuk/keluar',
       'Masukkan <strong>Uang Fisik Aktual</strong> yang ada di laci kas',
       'Sistem menghitung <strong>selisih</strong> otomatis (surplus/defisit)',
-      'Klik <strong>"Tutup Shift Sekarang"</strong> untuk menutup sesi'
-    ],
-    note: 'Setelah tutup kasir, Anda harus buka kasir lagi untuk memulai sesi baru.'
+      'Klik <strong>"Tutup Shift Sekarang"</strong> untuk menutup sesi. Absensi Waiter dicatat Pulang.'
+    ]
   },
   'laporan': {
     title: 'Laporan Harian Resto',
@@ -340,6 +316,49 @@ const stepDetails = {
       'Breakdown per metode pembayaran (Tunai, QRIS, Transfer, Debit)',
       'Filter berdasarkan <strong>rentang tanggal</strong> yang diinginkan'
     ]
+  },
+  // --- Modul ERP ---
+  'erp-hr': {
+    title: 'Alur HR & Payroll',
+    steps: [
+      '<strong>1. Master Data Karyawan:</strong> HR/Manager menambahkan Karyawan/Waiter di menu Data Karyawan ERP.',
+      '<strong>2. Absensi Terintegrasi:</strong> Waiter melakukan Clock-In saat masuk POS menggunakan PIN rahasia. Data ditarik otomatis ke menu <strong>Kehadiran</strong>.',
+      '<strong>3. Komisi Otomatis:</strong> Setiap transaksi restoran yang dibantu Waiter akan otomatis dihitung insentif sesuai Rate (%), dan ditarik ke Slip Gaji.',
+      '<strong>4. Cetak Slip:</strong> Buka menu <strong>Slip Gaji</strong> → Klik Generate Payroll → Slip jadi memuat Gaji, Insentif (Bonus Waiter), hingga POTONGAN otomatis.'
+    ],
+    note: 'Pastikan "Waiter" di pengaturan POS divalidasi ke karyawan HR yang valid agar komisi dibayarkan akurat.'
+  },
+  'erp-inv': {
+    title: 'Alur Inventory (Stok Barang)',
+    steps: [
+      '<strong>1. Master Barang:</strong> Daftarkan bahan mentah (beras, sayur, daging, saos) di menu <strong>Master Items</strong>.',
+      '<strong>2. Gudang & Lokasi:</strong> Modul Inventori memantau Stok antar Pusat Resto dan Cabang.',
+      '<strong>3. Mutasi Kasir otomatis:</strong> Anda dapat memberlakukan relasi resep: saat Nasi Goreng terjual di POS, otomatis stok Beras berkurang di Inventory.',
+      '<strong>4. Stok Opname:</strong> Lakukan pencocokan Stok pada akhir bulan. Buka menu <strong>Stok Opname</strong> → Isi Jumlah Aktual → Sistem akan memotong/naikkan perbedaan ke laporan Jurnal.'
+    ]
+  },
+  'erp-purchasing': {
+    title: 'Alur Purchasing (Pembelian)',
+    steps: [
+      '<strong>1. Daftar Supplier:</strong> Data suplier didaftarkan di menu <strong>Suppliers</strong>. (Misal: Agen Telur, Pemasok Daging).',
+      '<strong>2. Order Barang (PO):</strong> Buka menu <strong>Purchase Order</strong> → Tulis kebutuhan bahan.',
+      '<strong>3. Terima Barang (GR):</strong> Saat pesanan datang, konfirmasi masuk melalui fitur Goods Receipt. Stok di Inventori bertambah otomatis.',
+      '<strong>4. Tagihan (Bills):</strong> Setelah stok masuk, daftarkan hutang ke Supplier di menu <strong>Bills</strong>.',
+      '<strong>5. Pelunasan:</strong> Lakukan pembayaran tagihan menggunakan Saldo Rekening/Kas. Tagihan berubah menjadi PAID.'
+    ]
+  },
+  'erp-accounting': {
+    title: 'Alur Accounting & Keuangan',
+    steps: [
+      '<strong>1. Chart of Accounts:</strong> Penyesuaian kode klasifikasi Keuangan (Misal: 1-1002 Kas Resto, 4-1001 Omzet).',
+      '<strong>2. Auto-Jurnal Integrasi:</strong>',
+      '&nbsp; • Penjualan Kasir POS otomatis direkap ke <strong>Jurnal Penjualan Restoran</strong>.',
+      '&nbsp; • Pembayaran Tagihan Supplier (Purchasing) otomatis masuk ke <strong>Pengeluaran Keuangan</strong>.',
+      '&nbsp; • Generate Slip Gaji (HR) langsung dibukukan menjadi <strong>Beban Gaji & Komisi</strong>.',
+      '<strong>3. Buku Besar Manual:</strong> Akuntan dapat menambah Jurnal Umum terpisah (Contoh: Beban Listrik, Iuran RT).',
+      '<strong>4. Neraca Laporan:</strong> Keseluruhan dari kas, piutang, hutang (Supplier AP), dan modal diringkas dalam Laporan Neraca & Laba Rugi akhir bulan.'
+    ],
+    note: 'Jika semua Modul (POS, HR, Purchasing) diaktifkan, 80% laporan keuangan harian dan akhir bulan sudah berjalan secara Otopilot.'
   }
 }
 </script>
@@ -611,63 +630,6 @@ const stepDetails = {
   line-height: 1.5;
 }
 
-/* ═══ Daily Flow ═══ */
-.daily-flow {
-  display: flex;
-  gap: 16px;
-  align-items: stretch;
-}
-.daily-phase {
-  flex: 1;
-  background: #22262e;
-  border: 1px solid #2d3139;
-  border-radius: 14px;
-  overflow: hidden;
-}
-.phase-header {
-  padding: 14px 18px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.phase-morning { background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; }
-.phase-ops { background: linear-gradient(135deg, #0369a1, #0284c7); color: #fff; }
-.phase-night { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
-
-.phase-steps { padding: 16px; }
-.phase-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 0;
-  color: #cbd5e1;
-  font-size: 0.85rem;
-  border-bottom: 1px solid #2d3139;
-}
-.phase-step:last-child { border-bottom: none; }
-.step-badge {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  background: #334155;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 0.72rem;
-  color: #94a3b8;
-}
-.daily-connector {
-  display: flex;
-  align-items: center;
-  color: #475569;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
 /* Transition */
 .slide-up-enter-active, .slide-up-leave-active {
   transition: all 0.3s ease;
@@ -680,7 +642,6 @@ const stepDetails = {
 /* Responsive */
 @media (max-width: 768px) {
   .flow-branch { flex-direction: column; gap: 24px; }
-  .daily-flow { flex-direction: column; }
   .daily-connector { transform: rotate(90deg); justify-content: center; }
   .feature-grid { grid-template-columns: 1fr; }
   .guide-body { padding: 16px; }

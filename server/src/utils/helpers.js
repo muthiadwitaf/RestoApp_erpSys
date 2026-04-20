@@ -21,10 +21,20 @@ function parsePagination(query) {
     return { page, limit, offset };
 }
 
+// SECURITY: Allowlist of tables that can be used in resolveUUID
+const ALLOWED_RESOLVE_TABLES = new Set([
+    'items', 'warehouses', 'categories', 'branches', 'suppliers',
+    'resto_waiters', 'units', 'customers', 'users', 'roles',
+    'companies', 'resto_menu_items', 'resto_tables', 'chart_of_accounts',
+]);
+
 // Resolve UUID to integer id from a table
 async function resolveUUID(value, table, queryFn) {
     if (!value || value === "") return null;
     if (typeof value === 'number') return value;
+    if (!ALLOWED_RESOLVE_TABLES.has(table)) {
+        throw new Error(`resolveUUID: table '${table}' is not in the allowlist`);
+    }
     if (typeof value === 'string' && value.includes('-')) {
         const r = await queryFn(`SELECT id FROM ${table} WHERE uuid = $1`, [value]);
         return r.rows[0]?.id || null;

@@ -87,7 +87,7 @@ router.get('/', requirePermission('hr:view'), asyncHandler(async (req, res) => {
     const companyUuid = req.user.company_uuid;
     const { search, status, branch_uuid, departemen } = req.query;
 
-    let where = ['e.company_uuid = $1', 'e.is_active = TRUE'];
+    let where = ['e.company_uuid = $1'];
     let values = [companyUuid];
     let idx = 2;
 
@@ -116,7 +116,7 @@ router.get('/', requirePermission('hr:view'), asyncHandler(async (req, res) => {
         `SELECT
             e.uuid, e.nik, e.nama_lengkap, e.nama_panggilan, e.gender,
             e.foto_url, e.email_kerja, e.no_hp,
-            e.status, e.created_at,
+            e.status, e.is_active, e.created_at,
             b.name AS branch_name,
             ej.jabatan, ej.departemen, ej.jenis_karyawan, ej.tanggal_mulai,
             u.uuid AS user_uuid, u.is_active AS user_is_active,
@@ -309,11 +309,11 @@ router.put('/:uuid', requirePermission('hr:edit'), asyncHandler(async (req, res)
     const empId = empRes.rows[0].id;
 
     const FIELDS = [
-        'nama_lengkap', 'nama_panggilan', 'gender', 'tanggal_lahir', 'tempat_lahir',
+        'nik', 'nama_lengkap', 'nama_panggilan', 'gender', 'tanggal_lahir', 'tempat_lahir',
         'agama', 'status_kawin', 'golongan_darah',
         'email_kerja', 'email_pribadi', 'no_hp', 'no_hp_darurat', 'nama_darurat', 'hubungan_darurat',
         'alamat_ktp', 'kota_ktp', 'provinsi_ktp', 'kode_pos_ktp', 'alamat_domisili',
-        'status',
+        'status', 'is_active'
     ];
 
     const updates = [];

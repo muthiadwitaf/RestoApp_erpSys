@@ -46,6 +46,12 @@ export const createRestoMenuItem = (data)        => api.post('/resto/menu', data
 export const updateRestoMenuItem = (uuid, data)  => api.put(`/resto/menu/${uuid}`, data)
 export const deleteRestoMenuItem = (uuid)        => api.delete(`/resto/menu/${uuid}`)
 
+// ── Menu Recipes ──
+export const getMenuRecipes       = (menuUuid)             => api.get(`/resto/menu/${menuUuid}/recipes`)
+export const createMenuRecipe     = (menuUuid, data)       => api.post(`/resto/menu/${menuUuid}/recipes`, data)
+export const updateMenuRecipe     = (menuUuid, uuid, data) => api.put(`/resto/menu/${menuUuid}/recipes/${uuid}`, data)
+export const deleteMenuRecipe     = (menuUuid, uuid)       => api.delete(`/resto/menu/${menuUuid}/recipes/${uuid}`)
+
 // ── Kitchen ──
 export const getKitchenOrders    = ()            => api.get('/resto/kitchen')
 export const updateKitchenItemStatus = (itemUuid, status) => api.put(`/resto/kitchen/${itemUuid}/status`, { status })

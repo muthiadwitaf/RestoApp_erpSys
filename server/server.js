@@ -46,7 +46,7 @@ app.use('/api/', apiLimiter);
 // ── Serve uploaded images (auth-protected static files) ──────────────────
 const jwt = require('jsonwebtoken');
 const pathModule = require('path');
-const JWT_SECRET = process.env.JWT_SECRET || 'erp-secret-key-change-in-production';
+const { jwtSecret } = require('./src/config/auth');
 
 function imageAuthMiddleware(req, res, next) {
     // Accept token from Authorization header or ?token= query param
@@ -55,7 +55,7 @@ function imageAuthMiddleware(req, res, next) {
         || req.query.token;
     if (!token) return res.status(401).json({ error: 'Akses gambar memerlukan autentikasi' });
     try {
-        jwt.verify(token, JWT_SECRET);
+        jwt.verify(token, jwtSecret);
         next();
     } catch {
         return res.status(401).json({ error: 'Token tidak valid atau sudah kadaluarsa' });

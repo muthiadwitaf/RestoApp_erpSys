@@ -5,9 +5,13 @@ const { asyncHandler } = require('../../utils/helpers');
 
 router.use(authenticateToken);
 
+// SECURITY: Allowlist of tables for resolveId
+const ALLOWED_TABLES = new Set(['items', 'warehouses', 'categories', 'branches', 'suppliers', 'units']);
+
 // Helper: resolve UUID to internal ID
 async function resolveId(uuid, table) {
     if (!uuid) return null;
+    if (!ALLOWED_TABLES.has(table)) throw new Error(`resolveId: table '${table}' not allowed`);
     // If it's already a number, return as-is
     if (!isNaN(uuid)) return parseInt(uuid);
     const result = await query(`SELECT id FROM ${table} WHERE uuid = $1`, [uuid]);

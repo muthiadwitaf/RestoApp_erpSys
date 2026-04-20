@@ -116,135 +116,100 @@ router.get('/summary', requirePermission('accounting:view'), asyncHandler(async 
 
 // AP Summary
 router.get('/ap-summary', requirePermission('accounting:view'), asyncHandler(async (req, res) => {
-    //console.log('APSUMMARY')
     const { company_id, supplier_id } = req.query;
 
-    //const q = req.query.supplier_id //(req.query.supplier_id || '').trim();
-    //console.log('supplier_id==>', supplier_id)
-    //const like = `%${q}%`;  
-    let where = '' 
-    if (supplier_id !== '00') {
-        where = ` and a.supplier_id = ${supplier_id} `
+    // Validasi: company_id wajib dan harus format UUID
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!company_id || !UUID_REGEX.test(company_id)) {
+        return res.status(400).json({ error: 'company_id tidak valid' });
     }
-    //console.log('where', where)
-//    if (!account_id) return res.json([]);
-    // Resolve UUID to integer ID
-//    const accRes = await query(`SELECT id FROM chart_of_accounts WHERE uuid = $1`, [account_id]);
-//    if (accRes.rows.length === 0) return res.json([]);
-//    const accId = accRes.rows[0].id;
 
-//    let where = ['jl.account_id = $1'];
-//    let values = [accId];
-//    let idx = 2;
-//    if (branch_id) { where.push(`a.branch_id = $${idx++}`); values.push(branch_id); }
-//    if (date_from) { where.push(`je.date >= $${idx++}`); values.push(date_from); }
-//    if (date_to) { where.push(`je.date <= $${idx++}`); values.push(date_to); }
-/*
-    const queryx = `select c."name" NamaSupplier, sum(d.total - COALESCE(d.amount_paid, 0)) TotalHutang,
-            hutang7hari(a.warehouse_id, a.branch_id, c.id) JT1Minggu,
-            hutangJT(a.warehouse_id, a.branch_id, c.id) JT
-        from purchase_orders a
-        join goods_receives b on a.id = b.po_id 
-        join suppliers c on a.supplier_id = c.id
-        join purchase_bills d on d.po_id = a.id and d.gr_id = b.id
-        where a.branch_id in (select id from branches where uuid = '${branch_id}') and a.warehouse_id = 13
-        and a.status in ('processed', 'partial')
-        and (c."name" like '%%' OR c.name like ${like})
-        ORDER BY c."name"
-        group by c."name",a.warehouse_id, a.branch_id, c.id`
-    console.log(queryx)
-*/
+    const values = [company_id];
+    let idx = 2;
+    let supplierClause = '';
+
+    if (supplier_id && supplier_id !== '00') {
+        const suppId = parseInt(supplier_id);
+        if (isNaN(suppId)) return res.status(400).json({ error: 'supplier_id tidak valid' });
+        supplierClause = ` AND a.supplier_id = $${idx++}`;
+        values.push(suppId);
+    }
 
     const result = await query(
-        `select c."name" NamaSupplier, sum(d.total - COALESCE(d.amount_paid, 0)) TotalHutang,
+        `SELECT c."name" NamaSupplier, SUM(d.total - COALESCE(d.amount_paid, 0)) TotalHutang,
             hutang7hari(a.warehouse_id, a.branch_id, c.id) JT1Minggu,
             hutangJT(a.warehouse_id, a.branch_id, c.id) JT
-        from purchase_orders a
-        join goods_receives b on a.id = b.po_id 
-        join suppliers c on a.supplier_id = c.id
-        join purchase_bills d on d.po_id = a.id and d.gr_id = b.id
-        where a.branch_id in (
-            select id from branches where company_id = (
-                select id from companies where uuid = '${company_id}'
+        FROM purchase_orders a
+        JOIN goods_receives b ON a.id = b.po_id 
+        JOIN suppliers c ON a.supplier_id = c.id
+        JOIN purchase_bills d ON d.po_id = a.id AND d.gr_id = b.id
+        WHERE a.branch_id IN (
+            SELECT id FROM branches WHERE company_id = (
+                SELECT id FROM companies WHERE uuid = $1
             )
         ) 
-        and a.warehouse_id in (
-            select id from warehouses where branch_id in (
-                select id from branches where company_id = (
-                    select id from companies where uuid = '${company_id}'
+        AND a.warehouse_id IN (
+            SELECT id FROM warehouses WHERE branch_id IN (
+                SELECT id FROM branches WHERE company_id = (
+                    SELECT id FROM companies WHERE uuid = $1
                 )
             )
         )
-        and a.status in ('processed', 'partial')
-        ${where}
-        group by c."name",a.warehouse_id, a.branch_id, c.id
-        ORDER BY c."name"`
+        AND a.status IN ('processed', 'partial')
+        ${supplierClause}
+        GROUP BY c."name", a.warehouse_id, a.branch_id, c.id
+        ORDER BY c."name"`,
+        values
     );
     res.json(result.rows);
 }));
 
 router.get('/ap-detail', requirePermission('accounting:view'), asyncHandler(async (req, res) => {
-    //console.log('APSUMMARY')
     const { company_id, supplier_id } = req.query;
 
-    //const q = req.query.supplier_id //(req.query.supplier_id || '').trim();
-    //console.log('supplier_id==>', supplier_id)
-    //const like = `%${q}%`;  
-    let where = '' 
-    if (supplier_id !== '00') {
-        where = ` and a.supplier_id = ${supplier_id} `
+    // Validasi: company_id wajib dan harus format UUID
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!company_id || !UUID_REGEX.test(company_id)) {
+        return res.status(400).json({ error: 'company_id tidak valid' });
     }
-    //console.log('where', where)
-//    if (!account_id) return res.json([]);
-    // Resolve UUID to integer ID
-//    const accRes = await query(`SELECT id FROM chart_of_accounts WHERE uuid = $1`, [account_id]);
-//    if (accRes.rows.length === 0) return res.json([]);
-//    const accId = accRes.rows[0].id;
 
-//    let where = ['jl.account_id = $1'];
-//    let values = [accId];
-//    let idx = 2;
-//    if (branch_id) { where.push(`a.branch_id = $${idx++}`); values.push(branch_id); }
-//    if (date_from) { where.push(`je.date >= $${idx++}`); values.push(date_from); }
-//    if (date_to) { where.push(`je.date <= $${idx++}`); values.push(date_to); }
-/*
-    const queryx = `select c."name" NamaSupplier, sum(d.total - COALESCE(d.amount_paid, 0)) TotalHutang,
-            hutang7hari(a.warehouse_id, a.branch_id, c.id) JT1Minggu,
-            hutangJT(a.warehouse_id, a.branch_id, c.id) JT
-        from purchase_orders a
-        join goods_receives b on a.id = b.po_id 
-        join suppliers c on a.supplier_id = c.id
-        join purchase_bills d on d.po_id = a.id and d.gr_id = b.id
-        where a.branch_id in (select id from branches where uuid = '${branch_id}') and a.warehouse_id = 13
-        and a.status in ('processed', 'partial')
-        and (c."name" like '%%' OR c.name like ${like})
-        ORDER BY c."name"
-        group by c."name",a.warehouse_id, a.branch_id, c.id`
-    console.log(queryx)
-*/
+    const values = [company_id];
+    let idx = 2;
+    let supplierClause = '';
+
+    if (supplier_id && supplier_id !== '00') {
+        const suppId = parseInt(supplier_id);
+        if (isNaN(suppId)) return res.status(400).json({ error: 'supplier_id tidak valid' });
+        supplierClause = ` AND a.supplier_id = $${idx++}`;
+        values.push(suppId);
+    }
+
     const result = await query(
-        `select c."name" SupplierName, a."number" PONumber , b."number" GRNumber, to_char(b."date", 'yyyy-mm-dd') receiveDate, 
-            to_char(d.due_date, 'yyyy-mm-dd') dueDate, d.total ReceiveAmt, COALESCE(d.amount_paid, 0) amountpaid, 
+        `SELECT c."name" SupplierName, a."number" PONumber, b."number" GRNumber,
+            TO_CHAR(b."date", 'yyyy-mm-dd') receiveDate, 
+            TO_CHAR(d.due_date, 'yyyy-mm-dd') dueDate, d.total ReceiveAmt,
+            COALESCE(d.amount_paid, 0) amountpaid, 
             d.total - COALESCE(d.amount_paid, 0) saldoAP
-        from purchase_orders a
-        join goods_receives b on a.id = b.po_id 
-        join suppliers c on a.supplier_id = c.id
-        join purchase_bills d on d.po_id = a.id and d.gr_id = b.id
-        where a.branch_id in (
-            select id from branches where company_id = (
-                select id from companies where uuid = '${company_id}'
+        FROM purchase_orders a
+        JOIN goods_receives b ON a.id = b.po_id 
+        JOIN suppliers c ON a.supplier_id = c.id
+        JOIN purchase_bills d ON d.po_id = a.id AND d.gr_id = b.id
+        WHERE a.branch_id IN (
+            SELECT id FROM branches WHERE company_id = (
+                SELECT id FROM companies WHERE uuid = $1
             )
         ) 
-        and a.warehouse_id in (
-            select id from warehouses where branch_id in (
-                select id from branches where company_id = (
-                    select id from companies where uuid = '${company_id}'
+        AND a.warehouse_id IN (
+            SELECT id FROM warehouses WHERE branch_id IN (
+                SELECT id FROM branches WHERE company_id = (
+                    SELECT id FROM companies WHERE uuid = $1
                 )
             )
         )
-        and a.status in ('processed', 'partial')
-        ${where}
-        ORDER BY c."name"`
+        AND a.status IN ('processed', 'partial')
+        ${supplierClause}
+        ORDER BY c."name"`,
+        values
     );
     res.json(result.rows);
 }));

@@ -309,7 +309,12 @@
                 </div>
                 <div class="col-md-2">
                   <label class="form-label small fw-bold mb-1">PIN Absen</label>
-                  <input type="password" maxlength="6" class="form-control" v-model="waiterForm.pin" placeholder="Max 6 digit" id="input-waiter-pin" />
+                  <div class="input-group">
+                    <input :type="showPinNew ? 'text' : 'password'" maxlength="6" class="form-control" v-model="waiterForm.pin" placeholder="Max 6 digit" id="input-waiter-pin" />
+                    <button class="btn btn-outline-secondary" type="button" @click="showPinNew = !showPinNew">
+                      <i :class="showPinNew ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="col-md-2">
                   <label class="form-label small fw-bold mb-1">Komisi Override</label>
@@ -348,6 +353,7 @@
               <div v-else class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                   <thead class="table-light">
+                    <tr>
                       <th class="ps-3" style="width:5%">#</th>
                       <th>Nama</th>
                       <th>Telepon</th>
@@ -383,7 +389,12 @@
                       </td>
                       <td class="text-center">
                         <template v-if="editingWaiter === w.uuid">
-                          <input type="password" maxlength="6" class="form-control form-control-sm" style="max-width:80px;margin:0 auto" v-model="editWaiterForm.pin" placeholder="Baru" />
+                          <div class="input-group input-group-sm" style="max-width:110px;margin:0 auto">
+                            <input :type="showPinEdit ? 'text' : 'password'" maxlength="6" class="form-control" v-model="editWaiterForm.pin" placeholder="Baru" />
+                            <button class="btn btn-outline-secondary" type="button" @click="showPinEdit = !showPinEdit">
+                              <i :class="showPinEdit ? 'bi bi-eye-slash-fill' : 'bi bi-eye-fill'"></i>
+                            </button>
+                          </div>
                         </template>
                         <template v-else>
                           <span v-if="w.has_pin" class="badge bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-shield-lock me-1"></i>Ada</span>
@@ -613,6 +624,8 @@ const waiterSaving = ref(false)
 const waiterForm = ref({ name: '', phone: '', commission_pct: '', pin: '' })
 const editingWaiter = ref(null)
 const editWaiterForm = ref({ name: '', phone: '', commission_pct: '', pin: '' })
+const showPinNew = ref(false)
+const showPinEdit = ref(false)
 
 async function loadWaiters() {
   waiterLoading.value = true

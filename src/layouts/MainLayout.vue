@@ -12,6 +12,7 @@
         </span>
       </a>
       <ul class="sidebar-nav pos-sidebar-nav mt-3">
+        <li class="nav-item px-3 mb-2 text-uppercase text-white-50" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Point of Sales</li>
         <li class="nav-item" v-permission="'pos:view'">
           <router-link to="/resto/pos" class="nav-link" active-class="active">
             <i class="bi bi-display"></i><span class="nav-text">{{ t('nav_pos') }}</span>
@@ -52,6 +53,79 @@
             <i class="bi bi-question-circle"></i><span class="nav-text">Bantuan</span>
           </router-link>
         </li>
+
+        <!-- INVENTORY -->
+        <li class="nav-item px-3 mb-2 mt-4 text-uppercase text-white-50" v-permission="'inventory:view'" v-show="!isOnlyKasir" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Inventory</li>
+        <li class="nav-item" v-permission="'inventory:view'" v-show="!isOnlyKasir">
+          <router-link to="/inventory/items" class="nav-link" active-class="active">
+            <i class="bi bi-box-seam"></i><span class="nav-text">Bahan Baku</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'inventory:view'" v-show="!isOnlyKasir">
+          <router-link to="/inventory/stock" class="nav-link" active-class="active">
+            <i class="bi bi-boxes"></i><span class="nav-text">Stok Bahan</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'inventory:manage'" v-show="!isOnlyKasir">
+          <router-link to="/inventory/opname" class="nav-link" active-class="active">
+            <i class="bi bi-clipboard-check"></i><span class="nav-text">Stock Opname</span>
+          </router-link>
+        </li>
+
+        <!-- PURCHASING -->
+        <li class="nav-item px-3 mb-2 mt-4 text-uppercase text-white-50" v-permission="'purchasing:view'" v-show="!isOnlyKasir" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Purchasing</li>
+        <li class="nav-item" v-permission="'purchasing:view'" v-show="!isOnlyKasir">
+          <router-link to="/purchasing/suppliers" class="nav-link" active-class="active">
+            <i class="bi bi-truck"></i><span class="nav-text">Data Supplier</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'purchasing:view'" v-show="!isOnlyKasir">
+          <router-link to="/purchasing/orders" class="nav-link" active-class="active">
+            <i class="bi bi-file-earmark-text"></i><span class="nav-text">Purchase Orders</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'purchasing:view'" v-show="!isOnlyKasir">
+          <router-link to="/purchasing/bills" class="nav-link" active-class="active">
+            <i class="bi bi-receipt-cutoff"></i><span class="nav-text">Tagihan Pembelian</span>
+          </router-link>
+        </li>
+
+        <!-- ACCOUNTING -->
+        <li class="nav-item px-3 mb-2 mt-4 text-uppercase text-white-50" v-permission="'accounting:view'" v-show="!isOnlyKasir" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Accounting</li>
+        <li class="nav-item" v-permission="'accounting:view'" v-show="!isOnlyKasir">
+          <router-link to="/accounting/coa" class="nav-link" active-class="active">
+            <i class="bi bi-list-columns-reverse"></i><span class="nav-text">Chart of Accounts</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'accounting:view'" v-show="!isOnlyKasir">
+          <router-link to="/accounting/journals" class="nav-link" active-class="active">
+            <i class="bi bi-journal-check"></i><span class="nav-text">Jurnal Transaksi</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'accounting:view'" v-show="!isOnlyKasir">
+          <router-link to="/accounting/reports" class="nav-link" active-class="active">
+            <i class="bi bi-file-earmark-bar-graph"></i><span class="nav-text">Laporan Keuangan</span>
+          </router-link>
+        </li>
+
+        <!-- HR & PAYROLL -->
+        <li class="nav-item px-3 mb-2 mt-4 text-uppercase text-white-50" v-permission="'hr:view'" v-show="!isOnlyKasir" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">HR & Payroll</li>
+        <li class="nav-item" v-permission="'hr:view'" v-show="!isOnlyKasir">
+          <router-link to="/hr/employees" class="nav-link" active-class="active">
+            <i class="bi bi-people"></i><span class="nav-text">Data Karyawan</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'hr:view'" v-show="!isOnlyKasir">
+          <router-link to="/hr/attendance" class="nav-link" active-class="active">
+            <i class="bi bi-calendar-check"></i><span class="nav-text">Kehadiran & Cuti</span>
+          </router-link>
+        </li>
+        <li class="nav-item" v-permission="'hr:view'" v-show="!isOnlyKasir">
+          <router-link to="/hr/payroll" class="nav-link" active-class="active">
+            <i class="bi bi-cash-stack"></i><span class="nav-text">Payroll & PPh 21</span>
+          </router-link>
+        </li>
+
       </ul>
     </nav>
 
