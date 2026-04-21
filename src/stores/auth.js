@@ -2,26 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as settingsApi from '@/services/settings/api'
 
-const AUTH_DISABLED = import.meta.env.MODE !== 'test' && import.meta.env.VITE_DISABLE_LOGIN === 'true'
-
-function createGuestUser() {
-    return {
-        uuid: 'no-login-user',
-        username: 'guest',
-        name: 'Local User',
-        email: 'guest@local.app',
-        is_super_admin: true,
-        company_uuid: 'local-company',
-        company_name: 'Local Company',
-        roleNames: ['Super Admin'],
-        permissions: ['*'],
-        branches: []
-    }
-}
-
 export const useAuthStore = defineStore('auth', () => {
-    const storedUser = JSON.parse(localStorage.getItem('erp_user') || 'null')
-    const user = ref(AUTH_DISABLED ? (storedUser || createGuestUser()) : storedUser)
+    const user = ref(JSON.parse(localStorage.getItem('erp_user') || 'null'))
     const isAuthenticated = computed(() => !!user.value)
     const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes
     let timeoutId = null
@@ -36,18 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
         return user.value.permissions || []
     })
 
-    function ensureGuestSession() {
-        if (!AUTH_DISABLED) return false
-        if (!user.value) user.value = createGuestUser()
-        localStorage.setItem('erp_user', JSON.stringify(user.value))
-        localStorage.removeItem('erp_access_token')
-        localStorage.removeItem('erp_refresh_token')
-        return true
-    }
-
     async function login(email, password) {
-        if (ensureGuestSession()) return { success: true }
-
         try {
             const { data } = await settingsApi.login(email, password)
 
@@ -114,15 +85,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     async function logout() {
-        if (AUTH_DISABLED) {
-            user.value = createGuestUser()
-            localStorage.setItem('erp_user', JSON.stringify(user.value))
-            localStorage.removeItem('erp_access_token')
-            localStorage.removeItem('erp_refresh_token')
-            localStorage.removeItem('erp_branch')
-            return
-        }
-
         try {
             const refreshToken = localStorage.getItem('erp_refresh_token')
             if (refreshToken) await settingsApi.logout(refreshToken)
@@ -156,25 +118,21 @@ export const useAuthStore = defineStore('auth', () => {
 
     function stopSessionTimer() { clearTimeout(timeoutId) }
 
-    if (AUTH_DISABLED) ensureGuestSession()
-    else if (isAuthenticated.value) startSessionTimer()
+    if (isAuthenticated.value) startSessionTimer()
 
     function hasPermission(permission) {
-        if (AUTH_DISABLED) return true
         if (user.value?.is_super_admin) return true
         return userPermissions.value.includes(permission)
     }
     function hasAnyPermission(perms) {
-        if (AUTH_DISABLED) return true
         if (user.value?.is_super_admin) return true
         return perms.some(p => userPermissions.value.includes(p))
     }
 
     return {
         user, isAuthenticated, userPermissions,
-        authDisabled: AUTH_DISABLED,
         pendingCompanies, tempToken, pendingSuperAdmin,
-        login, logout, setUser, clearPending, ensureGuestSession,
+        login, logout, setUser, clearPending,
         hasPermission, hasAnyPermission, startSessionTimer
     }
 })

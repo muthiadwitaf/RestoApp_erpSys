@@ -1,7 +1,5 @@
 import axios from 'axios'
 
-const AUTH_DISABLED = import.meta.env.MODE !== 'test' && import.meta.env.VITE_DISABLE_LOGIN === 'true'
-
 const api = axios.create({
     baseURL: '/api',
     timeout: 15000,
@@ -47,10 +45,6 @@ api.interceptors.response.use(
         const originalRequest = error.config
         if (originalRequest) {
             activeRequests.delete(originalRequest)
-        }
-
-        if (AUTH_DISABLED && error.response?.status === 401) {
-            return Promise.reject(error)
         }
 
         if (error.response?.status === 401 && !originalRequest?._retry) {

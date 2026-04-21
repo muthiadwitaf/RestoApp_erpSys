@@ -68,19 +68,8 @@ const router = createRouter({
     routes
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
     const auth = useAuthStore()
-    const branch = useBranchStore()
-
-    if (auth.authDisabled) {
-        auth.ensureGuestSession()
-        if (!branch.userBranches.length) await branch.fetchBranches()
-        if (branch.userBranches.length > 0 && !branch.currentBranchId) {
-            branch.selectBranch(branch.userBranches[0].uuid)
-        }
-        if (to.meta.public) return next(getDefaultRoute(auth))
-        return next()
-    }
 
     if (to.name === 'CompanyPicker') {
         if (!auth.pendingCompanies || !auth.tempToken) return next('/login')
