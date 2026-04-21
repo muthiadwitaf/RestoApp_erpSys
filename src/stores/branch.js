@@ -8,7 +8,7 @@ export const useBranchStore = defineStore('branch', () => {
     const _stored = localStorage.getItem('erp_branch')
     const currentBranchId = ref((_stored && _stored !== 'undefined' && _stored !== 'null') ? JSON.parse(_stored) : null)
 
-    const currentBranch = computed(() => allBranches.value.find(b => b.uuid === currentBranchId.value) || null)
+    const currentBranch = computed(() => allBranches.value.find(b => b.uuid === currentBranchId.value || b.id === currentBranchId.value) || null)
 
     // userBranches: pakai allBranches yang sudah dinormalisasi
     // (bukan raw auth.user.branches yang punya .id = UUID bukan .uuid)
@@ -17,21 +17,27 @@ export const useBranchStore = defineStore('branch', () => {
     // Load branches dari login response — normalisasi property name
     // Backend SELECT alias: b.uuid as id, b.id as int_id
     // Normalisasi ke: { uuid: UUID, id: int, code, name }
+    function normalizeBranch(branch) {
+        const uuid = branch.uuid || (typeof branch.id === 'string' ? branch.id : null)
+        const id = branch.int_id || (typeof branch.id === 'number' ? branch.id : branch.id)
+        return {
+            ...branch,
+            uuid,
+            id,
+        }
+    }
+
     function loadFromUser() {
         const auth = useAuthStore()
         if (auth.user && auth.user.branches && auth.user.branches.length > 0) {
-            allBranches.value = auth.user.branches.map(b => ({
-                ...b,
-                uuid: b.uuid || b.id,    // backend returns UUID in .id field (aliased)
-                id: b.int_id || b.id,  // integer id
-            }))
+            allBranches.value = auth.user.branches.map(normalizeBranch)
         }
     }
 
     async function fetchBranches() {
         try {
             const { data } = await settingsApi.getBranches()
-            allBranches.value = data
+            allBranches.value = data.map(normalizeBranch)
         } catch (e) { /* ignore */ }
     }
 
@@ -47,15 +53,24 @@ export const useBranchStore = defineStore('branch', () => {
 
     async function addBranch(branch) {
         const { data } = await settingsApi.createBranch(branch)
-        allBranches.value.push(data)
-        return data
+        const created = normalizeBranch({ ...branch, ...data })
+        allBranches.value.push(created)
+        return created
     }
 
     async function updateBranch(uuid, branchData) {
         const { data } = await settingsApi.updateBranch(uuid, branchData)
-        const idx = allBranches.value.findIndex(b => b.uuid === uuid)
-        if (idx >= 0) allBranches.value[idx] = data
-        return data
+        const idx = allBranches.value.findIndex(b => b.uuid === uuid || b.id === uuid)
+        if (idx < 0) return data
+
+        const responseHasBranch = data && (data.uuid || data.id || data.code || data.name)
+        const updated = normalizeBranch({
+            ...allBranches.value[idx],
+            ...branchData,
+            ...(responseHasBranch ? data : {}),
+        })
+        allBranches.value[idx] = updated
+        return updated
     }
 
     // Init from stored user

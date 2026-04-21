@@ -2,8 +2,66 @@ const jwt = require('jsonwebtoken');
 const { jwtSecret } = require('../config/auth');
 const { query } = require('../config/db');
 
+const authDisabled = process.env.AUTH_DISABLED === 'true';
+let noLoginUserCache = null;
+
+async function getNoLoginUser() {
+    if (noLoginUserCache) return noLoginUserCache;
+
+    const companyIdFromEnv = Number(process.env.AUTH_DISABLED_COMPANY_ID || 0) || null;
+    const companyResult = await query(
+        companyIdFromEnv
+            ? `SELECT id, uuid, name FROM companies WHERE id = $1 LIMIT 1`
+            : `SELECT id, uuid, name FROM companies WHERE is_active IS DISTINCT FROM false ORDER BY id LIMIT 1`,
+        companyIdFromEnv ? [companyIdFromEnv] : []
+    );
+    const company = companyResult.rows[0] || { id: companyIdFromEnv || 1, uuid: null, name: 'Local Company' };
+
+    const userResult = await query(
+        `SELECT id, uuid, username, name, email
+         FROM users
+         WHERE is_active IS DISTINCT FROM false
+         ORDER BY is_super_admin DESC, id
+         LIMIT 1`
+    );
+    const user = userResult.rows[0] || {
+        id: 1,
+        uuid: 'no-login-user',
+        username: 'guest',
+        name: 'Local User',
+        email: 'guest@local.app',
+    };
+
+    const branchResult = await query(
+        `SELECT uuid FROM branches WHERE company_id = $1 ORDER BY id`,
+        [company.id]
+    );
+
+    noLoginUserCache = {
+        id: user.id,
+        uuid: user.uuid,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        is_super_admin: true,
+        company_id: company.id,
+        company_uuid: company.uuid,
+        company_name: company.name,
+        roleNames: ['Super Admin'],
+        permissions: ['*'],
+        branchIds: branchResult.rows.map(b => b.uuid),
+    };
+
+    return noLoginUserCache;
+}
+
 // Verify JWT access token
-function authenticateToken(req, res, next) {
+async function authenticateToken(req, res, next) {
+    if (authDisabled) {
+        req.user = await getNoLoginUser();
+        return next();
+    }
+
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: 'Token diperlukan' });
@@ -40,6 +98,7 @@ function requireCompany(req, res, next) {
 
 // Require Super Admin — ALWAYS re-validate from DB (nicht trust JWT alone)
 function requireSuperAdmin(req, res, next) {
+    if (authDisabled) return next();
     if (!req.user?.is_super_admin) return res.status(403).json({ error: 'Akses Super Admin diperlukan' });
     // Re-validate dari DB untuk mencegah JWT tampering
     query(`SELECT is_super_admin FROM users WHERE id = $1 AND is_active = true`, [req.user.id])
