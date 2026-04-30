@@ -23,11 +23,9 @@
 
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS

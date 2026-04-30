@@ -1,28 +1,18 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission, requireCompany } = require('../../middleware/auth');
+const { requirePermission, requireCompany } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler } = require('../../utils/helpers');
 
-router.use(authenticateToken);
-
 // GET -- filter by company_id dari JWT
 router.get('/', requirePermission('branch:view'), asyncHandler(async (req, res) => {
-    let result;
-    if (req.user.is_super_admin && !req.user.company_id) {
-        // Super Admin tanpa company context → return semua
-        result = await query(`SELECT b.uuid, b.code, b.name, b.address, b.phone, b.is_active, c.name as company_name
-            FROM branches b LEFT JOIN companies c ON b.company_id = c.id`);
-    } else {
-        // User biasa atau Super Admin dengan company context → filter by company
-        const companyId = req.user.company_id;
-        result = await query(
-            `SELECT b.uuid, b.code, b.name, b.address, b.phone, b.is_active, c.name as company_name
-             FROM branches b LEFT JOIN companies c ON b.company_id = c.id
-             WHERE b.company_id = (SELECT id FROM companies WHERE id = $1)`,
-            [companyId]
-        );
-    }
+    const companyId = req.user.company_id;
+    const result = await query(
+        `SELECT b.uuid, b.code, b.name, b.address, b.phone, b.is_active, c.name as company_name
+         FROM branches b LEFT JOIN companies c ON b.company_id = c.id
+         WHERE b.company_id = $1`,
+        [companyId]
+    );
     res.json(result.rows);
 }));
 
@@ -57,11 +47,6 @@ router.get('/:uuid', requirePermission('branch:view'), validateUUID(), asyncHand
     const result = await query(`SELECT b.uuid, b.code, b.name, b.address, b.phone, b.is_active, c.name as company_name
         FROM branches b LEFT JOIN companies c ON b.company_id = c.id WHERE b.uuid = $1`, [req.params.uuid]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Cabang tidak ditemukan' });
-    // Validasi company access (non-super-admin)
-    if (!req.user.is_super_admin) {
-        const branch = result.rows[0];
-        if (!req.user.branchIds?.includes(req.params.uuid)) return res.status(403).json({ error: 'Akses ditolak' });
-    }
     res.json(result.rows[0]);
 }));
 

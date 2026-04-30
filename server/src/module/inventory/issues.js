@@ -1,10 +1,8 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID, updateCoaBalancesForJournal } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
-
-router.use(authenticateToken);
 
 router.get('/', requirePermission('inventory:view'), asyncHandler(async (req, res) => {
     const { branch_id } = req.query;

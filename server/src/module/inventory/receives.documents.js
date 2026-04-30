@@ -2,12 +2,10 @@ const router = require('express').Router({ mergeParams: true });
 const path   = require('path');
 const fs     = require('fs');
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler } = require('../../utils/helpers');
 const { uploadDoc, processAndSaveDoc, UPLOAD_DIR } = require('../../middleware/upload');
-
-router.use(authenticateToken);
 
 // Helper: resolve GR uuid -> integer id + validate company access
 // Also returns company_uuid for folder path construction

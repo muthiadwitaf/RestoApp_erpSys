@@ -1,11 +1,9 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
-
-router.use(authenticateToken);
 
 // GET all SO
 router.get('/', requirePermission('sales:view', 'inventory:view', 'accounting:view'), asyncHandler(async (req, res) => {

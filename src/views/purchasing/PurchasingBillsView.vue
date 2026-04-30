@@ -1,23 +1,23 @@
 <template>
   <div class="purchasing-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Tagihan (Bills)</h3>
-        <span class="text-muted small">Kelola faktur dan tagihan dari supplier</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Tagihan (Bills)</h3>
+        <span class="text-secondary small">Kelola faktur dan tagihan dari supplier</span>
       </div>
       <div>
         <!-- Typically, bills are generated from POs, but allow manual creation -->
-        <button class="btn btn-primary" @click="alert('Pilih PO terlebih dahulu untuk membuat tagihan otomatis.')">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="alert('Pilih PO terlebih dahulu untuk membuat tagihan otomatis.')">
           <i class="bi bi-plus-lg me-1"></i> Buat Bill
         </button>
       </div>
     </div>
 
     <!-- Table List -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Nomor Bill</th>
               <th>Tanggal</th>
@@ -40,12 +40,12 @@
               <td class="text-center">
                 <span class="badge" :class="statusBadge(b.status)">{{ b.status.toUpperCase() }}</span>
               </td>
-              <td class="text-end">
-                <button v-if="b.status !== 'paid'" class="btn btn-sm btn-success me-2" @click="openPayModal(b)" title="Bayar">
+              <td class="text-end pe-4">
+                <button v-if="b.status !== 'paid'" class="btn btn-sm btn-success rounded-pill px-3 me-2 shadow-sm" @click="openPayModal(b)" title="Bayar">
                   <i class="bi bi-cash-coin me-1"></i> Bayar
                 </button>
-                <button class="btn btn-sm btn-light border text-dark" title="Lihat">
-                  <i class="bi bi-eye"></i>
+                <button class="btn btn-sm btn-link text-dark p-0" title="Lihat">
+                  <i class="bi bi-eye fs-5"></i>
                 </button>
               </td>
             </tr>
@@ -61,11 +61,11 @@
     </div>
 
     <!-- Pay Modal -->
-    <div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal fade modal-erp" id="payModal" tabindex="-1">
       <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">Pembayaran Tagihan</h5>
+        <div class="modal-content">
+          <div class="modal-header bg-white">
+            <h5 class="modal-title fw-bold text-dark"><i class="bi bi-cash-coin text-success me-2"></i>Pembayaran Tagihan</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4" v-if="selectedBill">
@@ -91,8 +91,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-success px-4" @click="submitPayment" :disabled="saving">
+            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" @click="submitPayment" :disabled="saving">
               <i class="bi bi-check-circle me-1"></i> Proses Pembayaran
             </button>
           </div>
@@ -181,12 +181,11 @@ onMounted(() => {
 
 <style scoped>
 .purchasing-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
 }
-.hover-row {
-  transition: background-color 0.15s ease;
-}
-.hover-row:hover {
-  background-color: var(--bs-primary-bg-subtle) !important;
+[data-theme="dark"] .purchasing-view {
+  background-color: #1a1d23;
 }
 </style>

@@ -1,23 +1,23 @@
 <template>
   <div class="inv-view">
     <!-- Header -->
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2 text-primary"></i>Stock Opname</h3>
-        <span class="text-muted small">Penyesuaian stok fisik dan sistem</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-clipboard-check me-2 text-primary"></i>Stock Opname</h3>
+        <span class="text-secondary small">Penyesuaian stok fisik dan sistem</span>
       </div>
       <div>
-        <button class="btn btn-primary" @click="openCreateModal">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="openCreateModal">
           <i class="bi bi-plus-lg me-1"></i> Buat Opname
         </button>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Nomor Opname</th>
               <th>Tanggal</th>
@@ -60,14 +60,14 @@
     </div>
 
     <!-- Create Modal -->
-    <div class="modal fade" id="createOpnameModal" tabindex="-1">
+    <div class="modal fade modal-erp" id="createOpnameModal" tabindex="-1">
       <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">Buat Stock Opname Baru</h5>
+        <div class="modal-content">
+          <div class="modal-header bg-white">
+            <h5 class="modal-title fw-bold text-dark">Buat Stock Opname Baru</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body p-4">
+          <div class="modal-body">
             <div class="mb-3">
               <label class="form-label fw-bold small">Pilih Gudang</label>
               <select v-model="form.warehouse_id" class="form-select">
@@ -88,9 +88,9 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-primary" @click="createOpname" :disabled="!form.warehouse_id || saving">
-              <i class="bi bi-check-lg"></i> Buat Dokumen
+            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-primary btn-glow rounded-pill px-4 fw-bold" @click="createOpname" :disabled="!form.warehouse_id || saving">
+              <i class="bi bi-check-lg me-1"></i> Buat Dokumen
             </button>
           </div>
         </div>
@@ -207,12 +207,12 @@ onMounted(() => {
 
 <style scoped>
 .inv-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
 }
-.hover-row {
-  transition: background-color 0.15s ease;
-}
-.hover-row:hover {
-  background-color: var(--bs-primary-bg-subtle) !important;
+
+[data-theme="dark"] .inv-view {
+  background-color: #1a1d23;
 }
 </style>

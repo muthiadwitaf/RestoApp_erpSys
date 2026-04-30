@@ -1,31 +1,31 @@
 <template>
   <div class="majoo-view">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div class="d-flex align-items-center gap-2">
-        <h3 class="mb-0 fw-bold fs-4 text-dark"><i class="bi bi-people-fill me-2 text-primary"></i> Data Karyawan</h3>
-        <span class="badge bg-primary rounded-pill px-3 py-1 ms-2" v-if="!loading">{{ filteredKaryawan.length }} karyawan</span>
+        <h3 class="mb-1 fw-bold fs-4 text-gradient"><i class="bi bi-people-fill me-2 text-primary"></i> Data Karyawan</h3>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 ms-2" v-if="!loading">{{ filteredKaryawan.length }} karyawan</span>
       </div>
       <div>
-        <button class="btn btn-primary rounded-pill px-4 shadow-sm" @click="openAddModal">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold shadow-sm" @click="openAddModal">
           <i class="bi bi-plus-lg me-1"></i> Tambah Karyawan
         </button>
       </div>
     </div>
 
     <!-- Toolbar / Search -->
-    <div class="mb-3 d-flex justify-content-between">
+    <div class="mb-4 d-flex justify-content-between">
        <div class="search-box position-relative" style="width: 350px;">
         <i class="bi bi-search position-absolute text-muted" style="left: 16px; top: 50%; transform: translateY(-50%);"></i>
-        <input v-model="searchQuery" class="form-control rounded-pill ps-5 border-light-subtle shadow-sm" placeholder="Cari nama atau NIK..." />
+        <input v-model="searchQuery" class="form-control rounded-pill ps-5 py-2 input-glass border-0 shadow-sm" placeholder="Cari nama atau NIK..." />
       </div>
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-3 shadow-sm border border-light-subtle overflow-hidden mb-5">
+    <div class="erp-card mb-5">
       <div class="table-responsive">
-        <table class="table align-middle mb-0 majoo-table">
-          <thead class="bg-light">
+        <table class="table align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th style="width: 50px;" class="text-center text-muted fw-semibold">#</th>
               <th class="text-muted fw-semibold">NAMA</th>
@@ -81,17 +81,17 @@
     </div>
 
     <!-- Modal Form -->
-    <div class="modal fade" id="employeeModal" tabindex="-1">
+    <div class="modal fade modal-erp" id="employeeModal" tabindex="-1">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-          <div class="modal-header bg-light border-0 px-4 pt-4 pb-3">
+        <div class="modal-content">
+          <div class="modal-header bg-white px-4 pt-4 pb-3">
             <h5 class="modal-title fw-bold text-dark">
               <i class="bi me-2" :class="form.uuid ? 'bi-pencil-square text-primary' : 'bi-person-plus text-primary'"></i> 
               {{ form.uuid ? 'Edit Karyawan' : 'Tambah Karyawan' }}
             </h5>
             <button type="button" class="btn-close rounded-circle shadow-sm" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body p-4 bg-white">
+          <div class="modal-body">
             <div class="mb-3">
               <label class="form-label fw-bold text-secondary small text-uppercase">NIK</label>
               <input v-model="form.nik" class="form-control rounded-3 py-2 bg-light border-0 shadow-sm" placeholder="Nomor Induk Karyawan" />
@@ -118,9 +118,9 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer bg-light border-0 px-4 pb-4 pt-0">
-            <button type="button" class="btn btn-light border shadow-sm rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" @click="save" :disabled="saving || !form.nama_lengkap">
+          <div class="modal-footer px-4 pb-4 pt-0">
+            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-primary btn-glow rounded-pill px-4 fw-bold shadow-sm" @click="save" :disabled="saving || !form.nama_lengkap">
               <i class="bi bi-check-lg me-1"></i> {{ saving ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
@@ -233,30 +233,12 @@ onMounted(() => {
 
 <style scoped>
 .majoo-view {
-  padding: 2.5rem;
-  background-color: #f6f8fb;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
   min-height: 100vh;
 }
-
-.majoo-table th {
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid #eef2f7;
-  padding: 1rem 0.5rem;
-}
-
-.majoo-table td {
-  padding: 1.25rem 0.5rem;
-  border-bottom: 1px solid #eef2f7;
-  vertical-align: middle;
-}
-
-.majoo-table tbody tr {
-  transition: all 0.2s ease;
-}
-
-.majoo-table tbody tr:hover {
-  background-color: #f8fbff;
+[data-theme="dark"] .majoo-view {
+  background-color: #1a1d23;
 }
 
 .action-btn {

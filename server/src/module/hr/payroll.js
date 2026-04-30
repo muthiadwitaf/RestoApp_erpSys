@@ -16,11 +16,9 @@
  */
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
 const { getRateTER } = require('./ter');
-
-router.use(authenticateToken);
 
 const hrView  = requirePermission('hr:view');
 const hrWrite = requirePermission('hr:edit');

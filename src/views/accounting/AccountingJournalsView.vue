@@ -1,22 +1,22 @@
 <template>
   <div class="accounting-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2 text-primary"></i>Jurnal Transaksi</h3>
-        <span class="text-muted small">Riwayat otomatis dari POS & Purchasing dan input Jurnal Umum</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-journal-check me-2 text-primary"></i>Jurnal Transaksi</h3>
+        <span class="text-secondary small">Riwayat otomatis dari POS & Purchasing dan input Jurnal Umum</span>
       </div>
       <div>
-        <button class="btn btn-primary" @click="alert('Fitur tambah jurnal manual akan diimplementasi di sini.')">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="alert('Fitur tambah jurnal manual akan diimplementasi di sini.')">
           <i class="bi bi-plus-lg me-1"></i> Buat Jurnal Baru
         </button>
       </div>
     </div>
 
     <!-- Table List -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Nomor Jurnal</th>
               <th>Tanggal</th>
@@ -34,7 +34,7 @@
               <td class="text-center fw-semibold text-success">{{ formatMoney(getTotals(j).debit) }}</td>
               <td class="text-center fw-semibold text-danger">{{ formatMoney(getTotals(j).credit) }}</td>
               <td class="text-center">
-                <span class="badge" :class="j.status === 'posted' ? 'bg-success' : 'bg-warning text-dark'">
+                <span class="badge rounded-pill fw-normal px-3" :class="j.status === 'posted' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">
                   {{ j.status.toUpperCase() }}
                 </span>
               </td>
@@ -97,12 +97,11 @@ onMounted(() => {
 
 <style scoped>
 .accounting-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
 }
-.hover-row {
-  transition: background-color 0.15s ease;
-}
-.hover-row:hover {
-  background-color: var(--bs-primary-bg-subtle) !important;
+[data-theme="dark"] .accounting-view {
+  background-color: #1a1d23;
 }
 </style>

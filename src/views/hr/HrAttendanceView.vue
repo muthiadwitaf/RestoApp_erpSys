@@ -1,26 +1,27 @@
 <template>
   <div class="hr-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <!-- HMR Trigger -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-calendar-check me-2 text-primary"></i>Kehadiran & Cuti</h3>
-        <span class="text-muted small">Pantau jam kerja (clock-in/out) dan permohonan cuti</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-calendar-check me-2 text-primary"></i>Kehadiran & Cuti</h3>
+        <span class="text-secondary small">Pantau jam kerja (clock-in/out) dan permohonan cuti</span>
       </div>
       <div>
-        <button class="btn btn-outline-primary" @click="alert('Persetujuan Cuti akan diimplementasi di sini.')">
+        <button class="btn btn-outline-primary rounded-pill px-4" @click="alert('Persetujuan Cuti akan diimplementasi di sini.')">
           <i class="bi bi-check2-square me-1"></i> Approval Cuti
         </button>
       </div>
     </div>
 
     <!-- Table Absensi -->
-    <div class="card border-0 shadow-sm mt-4">
-      <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0 fw-bold">Log Absensi Harian</h6>
-        <input type="date" class="form-control form-control-sm w-auto" />
+    <div class="erp-card mt-4 mb-5">
+      <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark">Log Absensi Harian</h6>
+        <input type="date" class="form-control form-control-sm w-auto rounded-pill px-3 input-glass border-0 shadow-sm" />
       </div>
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Nama Pegawai</th>
               <th>Clock In</th>
@@ -36,7 +37,7 @@
               <td class="text-danger"><i class="bi bi-clock me-1"></i>{{ att.clock_out || '-' }}</td>
               <td>{{ att.duration || '-' }}</td>
               <td class="text-center">
-                <span class="badge" :class="att.status === 'Hadir' ? 'bg-success' : 'bg-warning text-dark'">
+                <span class="badge rounded-pill fw-normal px-3" :class="att.status === 'Hadir' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">
                   {{ att.status }}
                 </span>
               </td>
@@ -78,6 +79,11 @@ onMounted(() => {
 
 <style scoped>
 .hr-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
+}
+[data-theme="dark"] .hr-view {
+  background-color: #1a1d23;
 }
 </style>

@@ -1,9 +1,7 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 /**
  * GET /api/settings/margin

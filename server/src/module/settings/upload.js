@@ -1,9 +1,6 @@
 const router = require('express').Router();
-const { authenticateToken } = require('../../middleware/auth');
 const { upload, processImage, deleteImageFile } = require('../../middleware/upload');
 const { asyncHandler } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // POST /api/settings/upload
 router.post('/', upload.single('image'), asyncHandler(async (req, res) => {

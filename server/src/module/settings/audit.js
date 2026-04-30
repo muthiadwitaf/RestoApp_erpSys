@@ -1,9 +1,7 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, parsePagination } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // GET /api/settings/audit
 router.get('/', requirePermission('settings:view'), asyncHandler(async (req, res) => {

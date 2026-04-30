@@ -37,7 +37,7 @@
 
       <div class="p-3">
         <!-- 2. Status Kasir (Read Only) -->
-        <div class="status-kasir-box p-3 mb-3 rounded-3 border">
+        <div class="status-kasir-box p-3 mb-3 rounded-3 border" v-if="authStore.hasPermission('pos:view')">
           <div class="d-flex justify-content-between align-items-center mb-2">
              <span class="small fw-bold text-secondary tracking-wide">{{ t('cashier_status') }}</span>
              <span v-if="isShiftOpen" class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">OPEN</span>

@@ -1,26 +1,24 @@
 <template>
   <div class="accounting-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-list-columns-reverse me-2 text-primary"></i>Chart of Accounts (COA)</h3>
-        <span class="text-muted small">Kelola kode dan referensi akun buku besar</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-list-columns-reverse me-2 text-primary"></i>Chart of Accounts (COA)</h3>
+        <span class="text-secondary small">Kelola kode dan referensi akun buku besar</span>
       </div>
       <div>
-        <button class="btn btn-primary" @click="openAddModal">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="openAddModal">
           <i class="bi bi-plus-lg me-1"></i> Tambah Akun
         </button>
       </div>
     </div>
 
-    <div class="row mb-3">
-      <div class="col-md-4">
-        <div class="search-box position-relative">
-          <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
-          <input v-model="searchQuery" class="form-control ps-5" placeholder="Cari nama atau kode akun..." />
-        </div>
+    <div class="d-flex flex-wrap gap-3 mb-4">
+      <div class="search-box position-relative flex-grow-1" style="max-width: 400px;">
+        <i class="bi bi-search position-absolute text-muted" style="left: 16px; top: 50%; transform: translateY(-50%);"></i>
+        <input v-model="searchQuery" class="form-control rounded-pill ps-5 py-2 input-glass border-0 shadow-sm" placeholder="Cari nama atau kode akun..." />
       </div>
-      <div class="col-md-3">
-        <select v-model="filterType" class="form-select">
+      <div class="d-flex gap-2">
+        <select v-model="filterType" class="form-select rounded-pill px-4 py-2 input-glass border-0 shadow-sm text-dark fw-semibold" style="width: 220px;">
           <option value="">-- Semua Tipe --</option>
           <option value="asset">Aset / Harta</option>
           <option value="liability">Kewajiban / Hutang</option>
@@ -32,34 +30,34 @@
     </div>
 
     <!-- Table List -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Kode Akun</th>
               <th>Nama Akun</th>
               <th>Tipe</th>
               <th class="text-center">Status</th>
-              <th class="text-end">Aksi</th>
+              <th class="text-end pe-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="c in filteredCoa" :key="c.uuid" class="hover-row">
               <td class="fw-bold text-primary font-monospace">{{ c.code }}</td>
-              <td class="fw-semibold">{{ c.name }}</td>
-              <td><span class="badge bg-secondary">{{ typeTranslate(c.type) }}</span></td>
+              <td class="fw-semibold"><i class="bi bi-folder2-open text-warning me-2"></i>{{ c.name }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary border px-2 py-1 fw-normal">{{ typeTranslate(c.type) }}</span></td>
               <td class="text-center">
-                <span class="badge" :class="c.is_active ? 'bg-success' : 'bg-danger'">
-                  {{ c.is_active ? 'Aktif' : 'Nonaktif' }}
+                <span class="badge rounded-pill fw-normal px-3" :class="c.is_active ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                  <i class="bi me-1" :class="c.is_active ? 'bi-check2' : 'bi-dash'"></i>{{ c.is_active ? 'Aktif' : 'Nonaktif' }}
                 </span>
               </td>
-              <td class="text-end">
-                <button class="btn btn-sm btn-link text-primary p-0 me-2" @click="openEditModal(c)" title="Edit">
-                  <i class="bi bi-pencil-square"></i>
+              <td class="text-end pe-4">
+                <button class="btn btn-sm btn-link text-primary p-0 me-3" @click="openEditModal(c)" title="Edit">
+                  <i class="bi bi-pencil-square fs-5"></i>
                 </button>
                 <button class="btn btn-sm btn-link text-danger p-0" @click="deleteConfirm(c)" title="Hapus">
-                  <i class="bi bi-trash3"></i>
+                  <i class="bi bi-trash3 fs-5"></i>
                 </button>
               </td>
             </tr>
@@ -75,16 +73,16 @@
     </div>
 
     <!-- Form Modal -->
-    <div class="modal fade" id="coaModal" tabindex="-1">
+    <div class="modal fade modal-erp" id="coaModal" tabindex="-1">
       <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-journal-plus"></i> {{ form.uuid ? 'Edit Akun' : 'Tambah Akun' }}
+        <div class="modal-content">
+          <div class="modal-header bg-white">
+            <h5 class="modal-title fw-bold text-dark">
+              <i class="bi bi-journal-plus text-primary me-1"></i> {{ form.uuid ? 'Edit Akun' : 'Tambah Akun' }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body p-4">
+          <div class="modal-body">
             <div class="mb-3">
               <label class="form-label fw-bold small">Kode Akun <span class="text-danger">*</span></label>
               <input v-model="form.code" class="form-control" placeholder="1001, 4001, dll" />
@@ -109,8 +107,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-primary px-4" @click="save" :disabled="saving || !form.code || !form.name">
+            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-primary btn-glow rounded-pill px-4 fw-bold" @click="save" :disabled="saving || !form.code || !form.name">
               <i class="bi bi-save me-1"></i> {{ saving ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
@@ -218,12 +216,11 @@ onMounted(() => {
 
 <style scoped>
 .accounting-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
 }
-.hover-row {
-  transition: background-color 0.15s ease;
-}
-.hover-row:hover {
-  background-color: var(--bs-primary-bg-subtle) !important;
+[data-theme="dark"] .accounting-view {
+  background-color: #1a1d23;
 }
 </style>

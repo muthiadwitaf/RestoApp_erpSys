@@ -19,13 +19,11 @@ const router = require('express').Router();
 const path = require('path');
 const fs = require('fs');
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
 const { uploadDoc, processAndSaveDoc, UPLOAD_DIR } = require('../../middleware/upload');
-
-router.use(authenticateToken);
 
 const REIMB_CATEGORIES = [
     'Transportasi & BBM', 'Konsumsi & Entertainment', 'ATK & Perlengkapan',

@@ -1,10 +1,8 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 router.get('/', requirePermission('inventory:view', 'pos:view'), asyncHandler(async (req, res) => {
     const companyId = req.user.company_id;

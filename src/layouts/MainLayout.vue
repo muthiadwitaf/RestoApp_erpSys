@@ -12,7 +12,7 @@
         </span>
       </a>
       <ul class="sidebar-nav pos-sidebar-nav mt-3">
-        <li class="nav-item px-3 mb-2 text-uppercase text-white-50" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Point of Sales</li>
+        <li class="nav-item px-3 mb-2 text-uppercase text-white-50" v-if="authStore.hasPermission('pos:view') || authStore.hasPermission('reportingsales:view')" style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Point of Sales</li>
         <li class="nav-item" v-permission="'pos:view'">
           <router-link to="/resto/pos" class="nav-link" active-class="active">
             <i class="bi bi-display"></i><span class="nav-text">{{ t('nav_pos') }}</span>
@@ -48,7 +48,7 @@
             <i class="bi bi-gear"></i><span class="nav-text">{{ t('nav_settings') }}</span>
           </router-link>
         </li>
-        <li class="nav-item" v-permission="'pos:view'" v-show="!isOnlyKasir">
+        <li class="nav-item" v-show="!isOnlyKasir">
           <router-link to="/resto/guide" class="nav-link" active-class="active">
             <i class="bi bi-question-circle"></i><span class="nav-text">Bantuan</span>
           </router-link>
@@ -229,8 +229,8 @@ const isHrManager = computed(() =>
 const isOnlyKasir = computed(() => {
    if (authStore.user?.is_super_admin) return false
    const roles = authStore.user?.roleNames || []
-   // if Kasir is their only role, or they have no pos:create
-   return roles.includes('Kasir') && !authStore.hasPermission('pos:create')
+   // if Cashier is their only role, or they have no pos:settings
+   return roles.includes('cashier') && !authStore.hasPermission('pos:settings')
 })
 
 // Auto-open menu HR saat pertama kali masuk halaman HR

@@ -1,10 +1,8 @@
 // src/module/sales/kitchen.js
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // Get pending orders for kitchen display
 router.get('/pending', requirePermission('kitchen:view'), asyncHandler(async (req, res) => {

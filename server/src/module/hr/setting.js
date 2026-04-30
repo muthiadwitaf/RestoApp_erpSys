@@ -22,12 +22,10 @@
  */
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
 
 // Semua endpoint butuh login
-router.use(authenticateToken);
-
 // Shorthand: middleware khusus untuk operasi write (hanya HR Manager)
 const hrWrite = requirePermission('hr:delete');
 

@@ -1,10 +1,8 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // GET /sales/pricelist — list all items with sell_price, hpp, price_tiers
 router.get('/', requirePermission('sales:view', 'sales:edit', 'sales:manage'), asyncHandler(async (req, res) => {
