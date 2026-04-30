@@ -9,9 +9,7 @@
  *   4. crud         -- GET /:uuid, POST /, PUT /:uuid, DELETE /:uuid
  */
 const router = require('express').Router();
-const { authenticateToken } = require('../../../middleware/auth');
-
-router.use(authenticateToken);
+const {  } = require('../../../middleware/auth');
 
 router.use('/categories', require('./categories'));
 router.use('/',           require('./reports'));    // /report & /:uuid/schedule -- BEFORE crud

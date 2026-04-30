@@ -1,10 +1,8 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
-
-router.use(authenticateToken);
 
 // GET POS transactions
 router.get('/', requirePermission('pos:view', 'sales:view'), asyncHandler(async (req, res) => {

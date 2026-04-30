@@ -7,12 +7,10 @@ const router = require('express').Router();
 const path   = require('path');
 const fs     = require('fs');
 const { query }                              = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler }                       = require('../../utils/helpers');
 const { upload, UPLOAD_DIR }                 = require('../../middleware/upload');
 const sharp  = require('sharp');
-
-router.use(authenticateToken);
 
 // ── Bootstrap: ensure POS columns exist on companies table ─────────────────
 // Called once at module load — uses safeAlter pattern (ignores "already exists")

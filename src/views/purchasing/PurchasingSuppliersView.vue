@@ -1,30 +1,30 @@
 <template>
   <div class="purchasing-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-truck me-2 text-primary"></i>Data Supplier</h3>
-        <span class="text-muted small">Kelola data pemasok barang atau bahan baku</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-truck me-2 text-primary"></i>Data Supplier</h3>
+        <span class="text-secondary small">Kelola data pemasok barang atau bahan baku</span>
       </div>
       <div>
-        <button class="btn btn-primary" @click="openAddModal">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="openAddModal">
           <i class="bi bi-plus-lg me-1"></i> Tambah Supplier
         </button>
       </div>
     </div>
 
     <!-- Toolbar -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <div class="search-box position-relative" style="width: 300px;">
-        <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%);"></i>
-        <input v-model="searchQuery" class="form-control ps-5" placeholder="Cari nama atau kode supplier..." />
+    <div class="d-flex flex-wrap gap-3 mb-4">
+      <div class="search-box position-relative flex-grow-1" style="max-width: 400px;">
+        <i class="bi bi-search position-absolute text-muted" style="left: 16px; top: 50%; transform: translateY(-50%);"></i>
+        <input v-model="searchQuery" class="form-control rounded-pill ps-5 py-2 input-glass border-0 shadow-sm" placeholder="Cari nama atau kode supplier..." />
       </div>
     </div>
 
     <!-- Table -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th style="width: 60px;" class="text-center">#</th>
               <th>Kode</th>
@@ -38,18 +38,25 @@
             <tr v-for="(sup, idx) in filteredSuppliers" :key="sup.uuid" class="hover-row">
               <td class="text-center text-muted small">{{ idx + 1 }}</td>
               <td class="fw-semibold text-primary font-monospace small">{{ sup.code }}</td>
-              <td class="fw-bold">{{ sup.name }}</td>
+              <td class="fw-bold">
+                <div class="d-flex align-items-center">
+                  <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3 fw-bold" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                    {{ sup.name.charAt(0).toUpperCase() }}
+                  </div>
+                  {{ sup.name }}
+                </div>
+              </td>
               <td>
                 <div v-if="sup.phone"><i class="bi bi-telephone text-muted me-1 small"></i>{{ sup.phone }}</div>
                 <div v-if="sup.email" class="small text-muted"><i class="bi bi-envelope text-muted me-1"></i>{{ sup.email }}</div>
               </td>
               <td class="small">{{ sup.address || '-' }}</td>
-              <td class="text-end">
-                <button class="btn btn-sm btn-link text-primary p-0 me-2" @click="openEditModal(sup)" title="Edit">
-                  <i class="bi bi-pencil-square"></i>
+              <td class="text-end pe-4">
+                <button class="btn btn-sm btn-link text-primary p-0 me-3" @click="openEditModal(sup)" title="Edit">
+                  <i class="bi bi-pencil-square fs-5"></i>
                 </button>
                 <button class="btn btn-sm btn-link text-danger p-0" @click="deleteConfirm(sup)" title="Hapus">
-                  <i class="bi bi-trash3"></i>
+                  <i class="bi bi-trash3 fs-5"></i>
                 </button>
               </td>
             </tr>
@@ -65,16 +72,16 @@
     </div>
 
     <!-- Form Modal -->
-    <div class="modal fade" id="supplierModal" tabindex="-1">
+    <div class="modal fade modal-erp" id="supplierModal" tabindex="-1">
       <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-          <div class="modal-header bg-light">
-            <h5 class="modal-title fw-bold">
-              <i class="bi bi-building"></i> {{ form.uuid ? 'Edit Supplier' : 'Tambah Supplier' }}
+        <div class="modal-content">
+          <div class="modal-header bg-white">
+            <h5 class="modal-title fw-bold text-dark">
+              <i class="bi bi-building text-primary me-1"></i> {{ form.uuid ? 'Edit Supplier' : 'Tambah Supplier' }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body p-4">
+          <div class="modal-body">
             <div class="mb-3">
               <label class="form-label fw-bold small">Kode Supplier <span class="text-danger">*</span></label>
               <input v-model="form.code" class="form-control" placeholder="Kosongkan untuk otomatis" />
@@ -99,8 +106,8 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-primary" @click="save" :disabled="saving || !form.name">
+            <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
+            <button type="button" class="btn btn-primary btn-glow rounded-pill px-5 fw-bold" @click="save" :disabled="saving || !form.name">
               <i class="bi bi-save me-1"></i> {{ saving ? 'Menyimpan...' : 'Simpan' }}
             </button>
           </div>
@@ -200,12 +207,11 @@ onMounted(() => {
 
 <style scoped>
 .purchasing-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
 }
-.hover-row {
-  transition: background-color 0.15s ease;
-}
-.hover-row:hover {
-  background-color: var(--bs-primary-bg-subtle) !important;
+[data-theme="dark"] .purchasing-view {
+  background-color: #1a1d23;
 }
 </style>

@@ -1,27 +1,27 @@
 <template>
   <div class="accounting-view">
-    <div class="inv-header border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Laporan Keuangan</h3>
-        <span class="text-muted small">Laba Rugi (P&L) dan Neraca (Balance Sheet) Realtime</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-file-earmark-bar-graph me-2 text-primary"></i>Laporan Keuangan</h3>
+        <span class="text-secondary small">Laba Rugi (P&L) dan Neraca (Balance Sheet) Realtime</span>
       </div>
       <div class="d-flex gap-2">
-        <input type="date" v-model="startDate" class="form-control form-control-sm" />
-        <span class="d-flex align-items-center">-</span>
-        <input type="date" v-model="endDate" class="form-control form-control-sm" />
-        <button class="btn btn-primary btn-sm" @click="loadReports">
-          <i class="bi bi-arrow-clockwise"></i> Refresh
+        <input type="date" v-model="startDate" class="form-control rounded-pill px-3 py-2 input-glass border-0 shadow-sm" />
+        <span class="d-flex align-items-center fw-bold text-muted">-</span>
+        <input type="date" v-model="endDate" class="form-control rounded-pill px-3 py-2 input-glass border-0 shadow-sm" />
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold ms-2" @click="loadReports">
+          <i class="bi bi-arrow-clockwise me-1"></i> Refresh
         </button>
       </div>
     </div>
 
     <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-4">
+    <ul class="nav nav-pills mb-4 gap-2">
       <li class="nav-item">
-        <button class="nav-link fw-bold" :class="{'active': activeTab === 'pl'}" @click="activeTab = 'pl'">Laba Rugi</button>
+        <button class="nav-link rounded-pill px-4 fw-bold" :class="activeTab === 'pl' ? 'active shadow-sm' : 'text-secondary'" @click="activeTab = 'pl'">Laba Rugi</button>
       </li>
       <li class="nav-item">
-        <button class="nav-link fw-bold" :class="{'active': activeTab === 'bs'}" @click="activeTab = 'bs'">Neraca</button>
+        <button class="nav-link rounded-pill px-4 fw-bold" :class="activeTab === 'bs' ? 'active shadow-sm' : 'text-secondary'" @click="activeTab = 'bs'">Neraca</button>
       </li>
     </ul>
 
@@ -35,8 +35,8 @@
 
     <!-- Laba Rugi Tab -->
     <div v-else-if="activeTab === 'pl'">
-      <div class="card border-0 shadow-sm">
-        <div class="card-header bg-primary text-white py-3">
+      <div class="erp-card mb-5">
+        <div class="card-header text-white py-3 border-0" style="background: linear-gradient(135deg, #3498db, #2980b9);">
           <h5 class="mb-0 fw-bold text-center">LAPORAN LABA RUGI</h5>
           <div class="text-center small opacity-75">Periode: {{ formatDate(startDate) }} s/d {{ formatDate(endDate) }}</div>
         </div>
@@ -83,8 +83,8 @@
 
     <!-- Neraca Tab -->
     <div v-else-if="activeTab === 'bs'">
-       <div class="card border-0 shadow-sm">
-        <div class="card-header bg-success text-white py-3">
+       <div class="erp-card mb-5">
+        <div class="card-header text-white py-3 border-0" style="background: linear-gradient(135deg, #10b981, #059669);">
           <h5 class="mb-0 fw-bold text-center">NERACA (BALANCE SHEET)</h5>
           <div class="text-center small opacity-75">Per Tanggal: {{ formatDate(endDate) }}</div>
         </div>
@@ -191,6 +191,11 @@ onMounted(() => {
 
 <style scoped>
 .accounting-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
+}
+[data-theme="dark"] .accounting-view {
+  background-color: #1a1d23;
 }
 </style>

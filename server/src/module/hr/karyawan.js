@@ -29,12 +29,10 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { upload, uploadDoc, UPLOAD_DIR } = require('../../middleware/upload');
 const { asyncHandler } = require('../../utils/helpers');
 const { bcryptRounds } = require('../../config/auth');
-
-router.use(authenticateToken);
 
 // ─── helper: generate NIK karyawan ──────────────────────────────────────────
 // Format: {company_code}{YYYY}{A-Z}{5-digit-sequence per company per year}

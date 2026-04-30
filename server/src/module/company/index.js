@@ -18,11 +18,10 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requireSuperAdmin } = require('../../middleware/auth');
+const { requireSuperAdmin } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
 const { bcryptRounds } = require('../../config/auth');
 
-router.use(authenticateToken);
 router.use(requireSuperAdmin);
 
 // ========================= PLATFORM AUDIT TRAIL =========================

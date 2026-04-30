@@ -47,10 +47,10 @@
     </div>
 
     <!-- Item Table -->
-    <div class="bg-white rounded-3 shadow-sm border border-secondary-subtle overflow-hidden mb-5">
+    <div class="erp-card mb-5">
       <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 inventory-table">
-          <thead class="table-light">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th scope="col" class="ps-4 fw-semibold text-muted small text-uppercase" style="width: 35%">Nama Bahan Baku</th>
               <th scope="col" class="fw-semibold text-muted small text-uppercase">Kategori</th>
@@ -93,10 +93,10 @@
     </div>
 
     <!-- Modal Form -->
-    <div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
+    <div class="modal fade modal-erp" id="itemModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-          <div class="modal-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+        <div class="modal-content">
+          <div class="modal-header bg-white pt-4 pb-0 px-4">
             <h5 class="modal-title fw-bold text-dark fs-4">
               <i class="bi me-2" :class="form.uuid ? 'bi-pencil-square text-primary' : 'bi-plus-circle text-primary'"></i> 
               {{ form.uuid ? 'Edit Master Barang' : 'Tambah Master Barang' }}
@@ -161,9 +161,9 @@
               </div>
             </div>
           </div>
-          <div class="modal-footer bg-white border-top-0 px-4 pb-4 pt-0">
+          <div class="modal-footer">
             <button type="button" class="btn btn-light rounded-pill px-4 fw-semibold text-secondary" data-bs-dismiss="modal">Batal</button>
-            <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm d-flex align-items-center" @click="save" :disabled="saving || !form.name">
+            <button type="button" class="btn btn-primary btn-glow rounded-pill px-5 fw-bold d-flex align-items-center" @click="save" :disabled="saving || !form.name">
               <span v-if="saving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
               <i v-else class="bi bi-save2 me-2"></i> 
               {{ saving ? 'Menyimpan...' : 'Simpan Barang' }}
@@ -312,39 +312,8 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* Typography Enhancements */
-.text-gradient {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
-}
-
-/* Glow & Glass effects */
-.btn-glow {
-  background: linear-gradient(135deg, #3498db, #2980b9);
-  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4) !important;
-  transition: all 0.3s ease;
-}
-.btn-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6) !important;
-}
-
-.input-glass {
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.05) !important;
-  transition: all 0.3s ease;
-}
-.input-glass:focus {
-  background-color: #ffffff;
-  box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.15) !important;
-}
-
-/* Table Row Hover */
-.inventory-table tbody tr:hover {
-  background-color: #f8fbff;
+[data-theme="dark"] .inv-view {
+  background-color: #1a1d23;
 }
 
 .cursor-pointer {

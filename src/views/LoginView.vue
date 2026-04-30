@@ -116,61 +116,21 @@ if (isTimeout.value) {
 }
 
 const mtxSuperAdmins = [
-  { name: 'Yusuf',   email: 'yusuf@mtx.web.id' },
-  { name: 'Untung',  email: 'untung@mtx.web.id' },
-  { name: 'Zakaria', email: 'zakaria@mtx.web.id' },
-  { name: 'Gorby',   email: 'gorby@mtx.web.id' },
-  { name: 'Adilson', email: 'adil@mtx.web.id' },
-  { name: 'Faris',   email: 'faris@mtx.web.id' },
-  { name: 'Husein',  email: 'husein@mtx.web.id' },
   { name: 'Muthiah', email: 'muthiah@mtx.web.id' },
-  { name: 'Pita',    email: 'pita@mtx.web.id' },
-  { name: 'Wafi',    email: 'wafi@mtx.web.id' },
-  { name: 'Hamzah',  email: 'hamzah@mtx.web.id' },
-  { name: 'Hanif',   email: 'hanif@mtx.web.id' },
-  { name: 'Imron',   email: 'imron@mtx.web.id' },
-  { name: 'Anis',    email: 'anis@mtx.web.id' },
 ]
 
 const demoUserGroups = [
   {
-    company: '🛒 PT Sumber Sejahtera Pangan (SSP) - Sembako',
+    company: '🍽️ Mirai Dining Fusion - Restaurant',
     users: [
-      { email: 'owner@ssp.co.id',   name: 'Hendra Wijaya',  role: 'Owner' },
-      { email: 'admin@ssp.co.id',   name: 'Dito',           role: 'Admin IT' },
-      { email: 'dir@ssp.co.id',     name: 'Dr. Suharto',    role: 'Direktur' },
-      { email: 'fin.mgr@ssp.co.id', name: 'Dewi Lestari',   role: 'Finance Manager' },
-      { email: 'fin@ssp.co.id',     name: 'Indah',          role: 'Finance Staff' },
-      { email: 'sls.mgr@ssp.co.id', name: 'Budi',           role: 'Sales Manager' },
-      { email: 'sls.sup@ssp.co.id', name: 'Eko',            role: 'Sales Supervisor' },
-      { email: 'sls@ssp.co.id',     name: 'Fitri',          role: 'Sales Staff' },
-      { email: 'pur.mgr@ssp.co.id', name: 'Agus',           role: 'Purchasing Manager' },
-      { email: 'pur@ssp.co.id',     name: 'Rini',           role: 'Purchasing Staff' },
-      { email: 'wh.mgr@ssp.co.id',  name: 'Tono',           role: 'Warehouse Manager' },
-      { email: 'wh.sup@ssp.co.id',  name: 'Sita',           role: 'Warehouse Supervisor' },
-      { email: 'wh@ssp.co.id',      name: 'Joko',           role: 'Warehouse Staff' },
-      { email: 'kasir@ssp.co.id',   name: 'Sri',            role: 'Kasir' },
+      { email: 'admin@mirai.com',    name: 'Admin System',  role: 'admin' },
+      { email: 'manager@mirai.com',  name: 'Pak Manager',   role: 'manager' },
+      { email: 'kasir@mirai.com',    name: 'Mbak Kasir',    role: 'cashier' },
+      { email: 'dapur@mirai.com',    name: 'Chef Dapur',    role: 'kitchen_staff' },
+      { email: 'gudang@mirai.com',   name: 'Staf Gudang',   role: 'inventory_staff' },
+      { email: 'supplier@mirai.com', name: 'Staf Pembelian',role: 'supplier_manager' },
     ]
-  },
-  {
-    company: '⚡ PT Cahaya Elektrik Nusantara (CEN) - Listrik',
-    users: [
-      { email: 'owner@cen.co.id',   name: 'Gunawan',        role: 'Owner' },
-      { email: 'admin@cen.co.id',   name: 'Ratna',          role: 'Admin IT' },
-      { email: 'dir@cen.co.id',     name: 'Dr. Hartono',    role: 'Direktur' },
-      { email: 'fin.mgr@cen.co.id', name: 'Lestari',        role: 'Finance Manager' },
-      { email: 'fin@cen.co.id',     name: 'Tanti',          role: 'Finance Staff' },
-      { email: 'sls.mgr@cen.co.id', name: 'Haryanto',       role: 'Sales Manager' },
-      { email: 'sls.sup@cen.co.id', name: 'Wahyu',          role: 'Sales Supervisor' },
-      { email: 'sls@cen.co.id',     name: 'Yanti',          role: 'Sales Staff' },
-      { email: 'pur.mgr@cen.co.id', name: 'Suryanto',       role: 'Purchasing Manager' },
-      { email: 'pur@cen.co.id',     name: 'Bambang',        role: 'Purchasing Staff' },
-      { email: 'wh.mgr@cen.co.id',  name: 'Suparno',        role: 'Warehouse Manager' },
-      { email: 'wh.sup@cen.co.id',  name: 'Dian',           role: 'Warehouse Supervisor' },
-      { email: 'wh@cen.co.id',      name: 'Imam',           role: 'Warehouse Staff' },
-      { email: 'kasir@cen.co.id',   name: 'Mira',           role: 'Kasir' },
-    ]
-  },
+  }
 ]
 
 async function handleLogin() {
@@ -205,6 +165,10 @@ async function handleLogin() {
 
 function getDefaultRoute(auth) {
   if (auth.hasPermission('pos:view')) return '/resto/pos'
+  if (auth.hasPermission('inventory:view')) return '/inventory/items'
+  if (auth.hasPermission('purchasing:view')) return '/purchasing/orders'
+  if (auth.hasPermission('reportingsales:view')) return '/resto/reports'
+  if (auth.hasPermission('hr:view')) return '/hr/employees'
   return '/forbidden'
 }
 

@@ -1,12 +1,10 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
 const logger = require('../../utils/logger');
-
-router.use(authenticateToken);
 
 // ── Bootstrap ─────────────────────
 ;(async () => {

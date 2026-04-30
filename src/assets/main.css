@@ -800,3 +800,116 @@ body {
 [data-theme="dark"] .theme-toggle {
   color: #ffd166;
 }
+
+/* ============================================
+   RestoERP Premium UI Global Design System
+   ============================================ */
+
+/* Typography Enhancements */
+.text-gradient {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+[data-theme="dark"] .text-gradient {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glow & Glass effects */
+.btn-glow {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4) !important;
+  transition: all 0.3s ease;
+}
+.btn-glow:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6) !important;
+}
+
+.input-glass {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  transition: all 0.3s ease;
+}
+.input-glass:focus {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.15) !important;
+}
+
+[data-theme="dark"] .input-glass {
+  background-color: rgba(30, 33, 40, 0.8) !important;
+  border-color: rgba(255,255,255,0.05) !important;
+}
+[data-theme="dark"] .input-glass:focus {
+  background-color: #252830 !important;
+}
+
+/* ERP Tables */
+.table-erp {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+.table-erp th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted-custom);
+  font-weight: 700;
+  padding: 1rem;
+  background: #f8faff;
+  border-bottom: 2px solid var(--border-color);
+}
+.table-erp td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border-color);
+  transition: background-color 0.2s;
+}
+.table-erp tbody tr:hover td {
+  background-color: #f8fbff;
+}
+
+[data-theme="dark"] .table-erp th { background: #252830; }
+[data-theme="dark"] .table-erp tbody tr:hover td { background-color: rgba(0, 180, 171, 0.08); }
+
+/* ERP Cards */
+.erp-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+[data-theme="dark"] .erp-card {
+  background: #1e2128;
+  border-color: #2d3139;
+}
+
+/* Floating Modals */
+.modal-erp .modal-content {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+.modal-erp .modal-header {
+  border-bottom: none;
+  padding: 24px 24px 0;
+}
+.modal-erp .modal-body {
+  padding: 24px;
+}
+.modal-erp .modal-footer {
+  border-top: none;
+  background: #f8faff;
+  padding: 16px 24px;
+}
+[data-theme="dark"] .modal-erp .modal-footer { background: #252830; }

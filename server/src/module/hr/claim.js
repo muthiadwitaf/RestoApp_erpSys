@@ -16,13 +16,11 @@
 const router = require('express').Router();
 const path = require('path');
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
 const { uploadDoc, processAndSaveDoc, UPLOAD_DIR } = require('../../middleware/upload');
 
 // Semua endpoint butuh login
-router.use(authenticateToken);
-
 // Middleware write: hanya HR Manager (sama seperti setting.js)
 const hrWrite = requirePermission('hr:delete');
 

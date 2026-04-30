@@ -576,14 +576,22 @@ const stepDetails = {
 
 /* ═══ Detail Panel ═══ */
 .guide-detail {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  width: 400px;
+  max-height: calc(100vh - 100px);
+  z-index: 1050;
   background: #22262e;
   border: 1px solid #38bdf8;
   border-radius: 16px;
-  margin-bottom: 40px;
-  overflow: hidden;
-  box-shadow: 0 12px 40px rgba(56,189,248,0.12);
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
 }
 .detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -632,11 +640,11 @@ const stepDetails = {
 
 /* Transition */
 .slide-up-enter-active, .slide-up-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .slide-up-enter-from, .slide-up-leave-to {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateX(40px);
 }
 
 /* Responsive */

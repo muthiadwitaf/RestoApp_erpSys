@@ -2,11 +2,9 @@ const router = require('express').Router();
 const bcrypt = require('bcrypt');
 const { query } = require('../../config/db');
 const { bcryptRounds } = require('../../config/auth');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, sanitizeResponse, parsePagination } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // GET /api/settings/users
 router.get('/', requirePermission('settings:view'), asyncHandler(async (req, res) => {
@@ -120,7 +118,7 @@ router.put('/:uuid', validateUUID(), asyncHandler(async (req, res) => {
     
     // Permission check: allow editing self profile, but restrict privileged fields
     const isTargetingSelf = req.user.uuid === req.params.uuid;
-    const hasSettingsEdit = req.user.is_super_admin || (req.user.permissions && req.user.permissions.includes('settings:edit'));
+    const hasSettingsEdit = req.permissions?.has('settings:edit');
     
     if (!isTargetingSelf && !hasSettingsEdit) {
         return res.status(403).json({ error: 'Anda tidak memiliki izin untuk mengedit user ini' });

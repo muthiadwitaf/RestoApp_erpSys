@@ -26,7 +26,7 @@ const routes = [
             { path: 'resto/tables', name: 'RestoTableMap', component: () => import('@/views/sales/RestoTableMapView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/menu', name: 'RestoMenu', component: () => import('@/views/sales/RestoMenuView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/pos', name: 'RestoPOS', component: () => import('@/views/sales/RestoPosView.vue'), meta: { permission: 'pos:view' } },
-            { path: 'resto/guide', name: 'RestoGuide', component: () => import('@/views/sales/RestoGuideView.vue'), meta: { permission: 'pos:view' } },
+            { path: 'resto/guide', name: 'RestoGuide', component: () => import('@/views/sales/RestoGuideView.vue') },
             { path: 'resto/kitchen', name: 'RestoKitchen', component: () => import('@/views/sales/RestoKitchenView.vue'), meta: { permission: 'pos:view' } },
             { path: 'resto/settings', name: 'RestoSettings', component: () => import('@/views/sales/PosSettingsView.vue'), meta: { permission: 'pos:view' } },
             
@@ -111,6 +111,10 @@ router.beforeEach((to, from, next) => {
 
 function getDefaultRoute(auth) {
     if (auth.hasPermission('pos:view')) return '/resto/pos'
+    if (auth.hasPermission('inventory:view')) return '/inventory/items'
+    if (auth.hasPermission('purchasing:view')) return '/purchasing/orders'
+    if (auth.hasPermission('reportingsales:view')) return '/resto/reports'
+    if (auth.hasPermission('hr:view')) return '/hr/employees'
     return '/forbidden'
 }
 

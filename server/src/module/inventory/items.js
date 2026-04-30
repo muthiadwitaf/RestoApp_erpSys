@@ -1,11 +1,9 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler } = require('../../utils/helpers');
 const { upload, processImage, deleteImageFile } = require('../../middleware/upload');
-
-router.use(authenticateToken);
 
 // Helper: build image_url from stored columns
 function buildImageUrl(image_id, image_company_uuid) {

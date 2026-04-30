@@ -19,10 +19,8 @@
  */
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // ─── Helper: tanggal lokal server (YYYY-MM-DD) tanpa UTC drift ───────────────
 // toISOString() selalu UTC → jam 00:00-06:59 WIB hasilnya masih tanggal kemarin.

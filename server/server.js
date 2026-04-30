@@ -7,6 +7,7 @@ const xssClean = require('xss-clean');
 const compression = require('compression');
 const { apiLimiter } = require('./src/middleware/rateLimiter');
 const { errorHandler } = require('./src/middleware/errorHandler');
+const { authenticateToken, requireTenant } = require('./src/middleware/auth');
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3999');
@@ -21,7 +22,7 @@ const corsOptions = {
         if (!origin || (process.env.CORS_ORIGIN && process.env.CORS_ORIGIN.split(',').includes(origin))) {
             callback(null, true);
         } else if (!process.env.CORS_ORIGIN) {
-            callback(null, origin || '*'); // reflect origin if no strict CORS defined
+            callback(null, true); // reflect origin if no strict CORS defined
         } else {
             callback(new Error('Not allowed by CORS'));
         }
@@ -64,7 +65,29 @@ function imageAuthMiddleware(req, res, next) {
 
 app.use('/uploadedImage', imageAuthMiddleware, express.static(pathModule.join(__dirname, 'uploadedImage')));
 
-// ── API Routes ──
+// ── Health check (public) ──
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PUBLIC ROUTES — No authentication required
+// ═══════════════════════════════════════════════════════════════════════════════
+const settingsAuthModule = require('./src/module/settings/auth');
+app.use('/api/settings/auth', settingsAuthModule);
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROTECTED ROUTES — Global authenticateToken + requireTenant
+// ═══════════════════════════════════════════════════════════════════════════════
+// All /api/* routes below this line require JWT authentication + company context.
+// Individual routes still use requirePermission() for granular access control.
+
+app.use('/api', authenticateToken, requireTenant);
+
+
+// ── API Routes (all protected by global auth above) ──
 const settingsModule = require('./src/module/settings');
 const inventoryModule = require('./src/module/inventory');
 const salesModule = require('./src/module/sales');
@@ -74,7 +97,18 @@ const companyModule = require('./src/module/company');
 const hrModule = require('./src/module/hr');
 const restoModule = require('./src/module/resto');
 
-app.use('/api/settings', settingsModule);
+// Settings sub-routes (auth is already handled, but auth sub-router was mounted above as public)
+// We need a settings router that EXCLUDES auth since it's already mounted as public
+const settingsProtected = require('express').Router();
+settingsProtected.use('/users', require('./src/module/settings/users'));
+settingsProtected.use('/roles', require('./src/module/settings/roles'));
+settingsProtected.use('/branches', require('./src/module/settings/branches'));
+settingsProtected.use('/audit', require('./src/module/settings/audit'));
+settingsProtected.use('/upload', require('./src/module/settings/upload'));
+settingsProtected.use('/company', require('./src/module/settings/company'));
+settingsProtected.use('/margin', require('./src/module/settings/margin'));
+app.use('/api/settings', settingsProtected);
+
 app.use('/api/inventory', inventoryModule);
 app.use('/api/sales', salesModule);
 app.use('/api/purchasing', purchasingModule);
@@ -83,10 +117,6 @@ app.use('/api/company', companyModule);
 app.use('/api/hr', hrModule);
 app.use('/api/resto', restoModule);
 
-// ── Health check ──
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // ── Serve FE build (SPA) ── kita comment dulu untuk development
 // const FE_DIST = path.join(__dirname, '../FE/dist');

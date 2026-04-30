@@ -1,11 +1,9 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler, resolveUUID, updateCoaBalancesForJournal } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
-
-router.use(authenticateToken);
 
 // GET all bills — includes amount_paid & payment history per bill
 router.get('/', requirePermission('purchasing:view', 'accounting:view'), asyncHandler(async (req, res) => {

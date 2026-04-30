@@ -12,7 +12,7 @@
  */
 const express = require('express');
 const { query, getClient } = require('../../config/db');
-const { authenticateToken } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { validateUUID } = require('../../middleware/validate');
 const { asyncHandler } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
@@ -84,14 +84,13 @@ async function ensureBalance(client, companyUuid, employeeId, leaveTypeId, year)
 // 1. LEAVE TYPES — GET /hr/leave-types
 // =============================================================================
 const leaveTypes = express.Router();
-leaveTypes.use(authenticateToken);
-
-// Helper: check HR Manager permission OR super admin
+// Helper: check HR Manager permission (NO bypass)
 function requireHrManager(req, res, next) {
-    if (req.user?.is_super_admin) return next(); // Super Admin bypass
-    const perms = req.user?.permissions || [];
-    if (!perms.includes('hr:delete')) {
-        return res.status(403).json({ error: 'Hanya HR Manager atau Super Admin yang dapat mengelola jenis cuti' });
+    if (!req.permissions) {
+        return res.status(403).json({ error: 'Izin tidak tersedia' });
+    }
+    if (!req.permissions.has('hr:delete')) {
+        return res.status(403).json({ error: 'Hanya HR Manager yang dapat mengelola jenis cuti' });
     }
     next();
 }
@@ -100,7 +99,7 @@ function requireHrManager(req, res, next) {
 leaveTypes.get('/', asyncHandler(async (req, res) => {
     const companyUuid = req.user.company_uuid;
     const perms = req.user?.permissions || [];
-    const isAdmin = perms.includes('hr:delete') || req.user?.is_super_admin;
+    const isAdmin = req.permissions?.has('hr:delete');
     const result = await query(
         `SELECT id, name, code, quota_days, is_paid, requires_doc, color, is_active,
                 count_saturday, count_sunday, description
@@ -194,8 +193,6 @@ leaveTypes.patch('/:id/toggle', requireHrManager, asyncHandler(async (req, res) 
 // 2. LEAVE BALANCES — GET /hr/leave-balances/mine
 // =============================================================================
 const leaveBalances = express.Router();
-leaveBalances.use(authenticateToken);
-
 leaveBalances.get('/mine', asyncHandler(async (req, res) => {
     const companyUuid = req.user.company_uuid;
     const emp = await resolveEmployee(req.user.id, companyUuid);
@@ -239,8 +236,6 @@ leaveBalances.get('/mine', asyncHandler(async (req, res) => {
 // 3. EMPLOYEE LEAVES — Self-service /hr/employee-leaves
 // =============================================================================
 const employeeLeaves = express.Router();
-employeeLeaves.use(authenticateToken);
-
 // ── GET / — list pengajuan saya ───────────────────────────────────────────────
 employeeLeaves.get('/', asyncHandler(async (req, res) => {
     const companyUuid = req.user.company_uuid;
@@ -421,8 +416,6 @@ employeeLeaves.delete('/:uuid', validateUUID(), asyncHandler(async (req, res) =>
 // 4. LEAVE ADMIN — /hr/leaves (approved calendar + management)
 // =============================================================================
 const leaveAdmin = express.Router();
-leaveAdmin.use(authenticateToken);
-
 // ── GET /team — Cuti approved semua karyawan 1 perusahaan (team calendar) ─────
 leaveAdmin.get('/team', asyncHandler(async (req, res) => {
     const companyUuid = req.user.company_uuid;

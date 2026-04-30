@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const { query, getClient } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
 const { generateAutoNumber } = require('../../utils/autoNumber');
 const { uploadDoc, uploadCapture, processAndSaveDoc, processAndSaveJpeg, UPLOAD_DIR } = require('../../middleware/upload');
@@ -8,16 +8,14 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-router.use(authenticateToken);
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Permission helpers untuk delivery:*_self
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Cek apakah user punya salah satu dari permissions yang diberikan
+// Cek apakah user punya salah satu dari permissions yang diberikan (NO bypass)
 function hasPerm(req, ...perms) {
-    if (req.user?.is_super_admin) return true;
-    return perms.some(p => req.user?.permissions?.includes(p));
+    if (!req.permissions) return false;
+    return perms.some(p => req.permissions.has(p));
 }
 
 // Resolve employee integer id dari JWT — coba via employee_uuid, fallback via user_id

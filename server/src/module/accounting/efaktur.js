@@ -9,10 +9,8 @@
  */
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // Helper: format nomor seri faktur pajak
 // Format DJP: PREFIX-YY.XXXXXXXXXX (misal: 010-25.00000001)

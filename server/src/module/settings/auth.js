@@ -100,6 +100,7 @@ async function buildTokenPayload(userId, companyId) {
             employee_nik: employee_nik,
             roleIds,
             roleNames,
+            roles: roleNames,  // Array of role names for requireRole/requireAnyRole middleware
             permissions,
             branchIds,
         },

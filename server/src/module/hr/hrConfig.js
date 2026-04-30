@@ -25,16 +25,13 @@ const express  = require('express');
 const https    = require('https');
 const { URLSearchParams } = require('url');
 const { query } = require('../../config/db');
-const { authenticateToken } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler } = require('../../utils/helpers');
 
 const router = express.Router();
-router.use(authenticateToken);
-
 // ── Middleware: HR Manager only ────────────────────────────────────────────────
 function requireHrManager(req, res, next) {
-    const perms = req.user?.permissions || [];
-    if (req.user?.is_super_admin || perms.includes('hr:delete')) return next();
+    if (req.permissions?.has('hr:delete')) return next();
     return res.status(403).json({ error: 'Hanya HR Manager yang dapat mengubah konfigurasi HR' });
 }
 

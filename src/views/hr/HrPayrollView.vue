@@ -1,22 +1,22 @@
 <template>
   <div class="hr-view">
-    <div class="inv-header d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2">
       <div>
-        <h3 class="mb-0 fw-bold"><i class="bi bi-cash-stack me-2 text-primary"></i>Payroll & TER PPh 21</h3>
-        <span class="text-muted small">Generate slip gaji otomatis & perhitungan pajak tarif efektif (TER)</span>
+        <h3 class="mb-1 text-gradient fw-bolder"><i class="bi bi-cash-stack me-2 text-primary"></i>Payroll & TER PPh 21</h3>
+        <span class="text-secondary small">Generate slip gaji otomatis & perhitungan pajak tarif efektif (TER)</span>
       </div>
       <div>
-        <button class="btn btn-primary" @click="alert('Jalankan Generate Payroll untuk periode bulan berjalan.')">
+        <button class="btn btn-primary rounded-pill px-4 btn-glow fw-semibold" @click="alert('Jalankan Generate Payroll untuk periode bulan berjalan.')">
           <i class="bi bi-calculator me-1"></i> Generate Payroll
         </button>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body p-0 table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
+    <div class="erp-card mb-5">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 table-erp">
+          <thead>
             <tr>
               <th>Periode</th>
               <th>Nama Karyawan</th>
@@ -38,7 +38,7 @@
               <td class="text-end text-danger">-{{ formatMoney(pay.tax) }}</td>
               <td class="text-end fw-bold text-primary fs-6">{{ formatMoney(pay.net_salary) }}</td>
               <td class="text-center">
-                <span class="badge" :class="pay.status === 'Paid' ? 'bg-success' : 'bg-secondary'">{{ pay.status }}</span>
+                <span class="badge rounded-pill fw-normal px-3" :class="pay.status === 'Paid' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">{{ pay.status }}</span>
               </td>
             </tr>
             <tr v-if="payrolls.length === 0 && !loading">
@@ -76,6 +76,11 @@ onMounted(() => loadData())
 
 <style scoped>
 .hr-view {
-  padding: 24px;
+  padding: 2rem 2.5rem;
+  background-color: #f8faff;
+  min-height: 100vh;
+}
+[data-theme="dark"] .hr-view {
+  background-color: #1a1d23;
 }
 </style>

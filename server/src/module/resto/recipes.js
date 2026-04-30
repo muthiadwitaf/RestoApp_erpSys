@@ -1,9 +1,7 @@
 const router = require('express').Router();
 const { query } = require('../../config/db');
-const { authenticateToken, requirePermission } = require('../../middleware/auth');
+const { requirePermission } = require('../../middleware/auth');
 const { asyncHandler, resolveUUID } = require('../../utils/helpers');
-
-router.use(authenticateToken);
 
 // Helper function to recalculate and update recipe_cost and cogs for a menu item
 async function updateMenuRecipeCost(menuId) {
